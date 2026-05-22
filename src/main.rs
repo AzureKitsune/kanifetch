@@ -2,6 +2,7 @@ fn main() {
     println!("Hostname: {}", read_host_name());
     println!("OS Name: {}", read_os_name());
     println!("Kernel: {}", read_kernel());
+    println!("Shell: {}", std::env!("SHELL"))
 }
 
 fn read_host_name() -> String {
