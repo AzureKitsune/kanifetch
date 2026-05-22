@@ -1,14 +1,38 @@
 use std::fs;
 
 fn main() {
-    let hostname: String = read_host_name();
-    println!("Hostname: {}", hostname);
+    println!("Hostname: {}", read_host_name());
+    println!("OS Name: {}", read_os_name());
 }
 
 fn read_host_name() -> String {
     let hostname = std::fs::read_to_string("/etc/hostname");
     match hostname {
-        Ok(contents) => contents,
-        Err(e) => "N/A".to_string(),
+        Ok(contents) => contents.trim().to_string(),
+        Err(_e) => "N/A".to_string(),
+    }
+}
+
+fn read_os_name() -> String {
+    let os_release = std::fs::read_to_string("/etc/os-release");
+    match os_release {
+        Err(_e) => "N/A".to_string(),
+        Ok(contents) => {
+            let mut lines = contents.split_terminator("\n");
+            let os_pretty_name = lines.find(|&item| item.starts_with("PRETTY_NAME="));
+            match os_pretty_name {
+                Some(val) => val
+                    .split("=")
+                    .nth(1)
+                    .unwrap()
+                    .trim()
+                    .strip_prefix("\"")
+                    .unwrap()
+                    .strip_suffix("\"")
+                    .unwrap()
+                    .to_string(),
+                None => "N/A".to_string(),
+            }
+        }
     }
 }
