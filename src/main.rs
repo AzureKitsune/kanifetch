@@ -1,5 +1,3 @@
-use std::fs;
-
 fn main() {
     println!("Hostname: {}", read_host_name());
     println!("OS Name: {}", read_os_name());
@@ -25,12 +23,11 @@ fn read_os_name() -> String {
                 Some(val) => val
                     .split("=")
                     .nth(1)
-                    .unwrap()
+                    .expect("Can't read os name")
                     .trim()
-                    .strip_prefix("\"")
-                    .unwrap()
-                    .strip_suffix("\"")
-                    .unwrap()
+                    .trim_start_matches("\"")
+                    .trim_end_matches("\"")
+                    .trim()
                     .to_string(),
                 None => "N/A".to_string(),
             }
@@ -42,6 +39,6 @@ fn read_kernel() -> String {
     let kernel = std::fs::read_to_string("/proc/sys/kernel/osrelease");
     match kernel {
         Err(_e) => "N/A".to_string(),
-        Ok(contents) => contents.to_string(),
+        Ok(contents) => contents.trim().to_string(),
     }
 }
