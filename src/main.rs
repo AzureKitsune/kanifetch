@@ -2,6 +2,7 @@ fn main() {
     println!("Hostname: {}", read_host_name());
     println!("OS Name: {}", read_os_name());
     println!("Kernel: {}", read_kernel());
+    println!("Uptime: {}", read_uptime());
     println!("Shell: {}", std::env!("SHELL"))
 }
 
@@ -41,5 +42,43 @@ fn read_kernel() -> String {
     match kernel {
         Err(_e) => "N/A".to_string(),
         Ok(contents) => contents.trim().to_string(),
+    }
+}
+
+fn read_uptime() -> String {
+    let uptime = std::fs::read_to_string("/proc/uptime");
+    if let Ok(contents) = uptime {
+        match contents.split(' ').collect::<Vec<_>>().as_array() {
+            Some([uptime, _]) => {
+                let total_seconds = uptime.parse::<f64>().expect("N/A");
+
+                let mut result = String::new();
+
+                let days = f64::round(total_seconds / 86400.0);
+                let days_rem = total_seconds % 86400.0;
+                let hours = f64::round(days_rem / 3600.0);
+                let hours_rem = days_rem % 3600.0;
+                let minutes = f64::round(hours_rem / 60.0);
+                // let minutes_rem = hours_rem % 60.0;
+                // let seconds = f64::round(minutes_rem / 60.0);
+
+                // format!("{} days, {} hours, {} minutes", days, hours, minutes)
+
+                if days > 0.0 {
+                    result.push_str(format!("{} days, ", days).as_str());
+                }
+
+                if hours > 0.0 {
+                    result.push_str(format!("{} hours, ", hours).as_str());
+                }
+
+                result.push_str(format!("{} minutes", minutes).as_str());
+
+                result
+            }
+            None => String::from("N/A"),
+        }
+    } else {
+        String::from("N/A")
     }
 }
