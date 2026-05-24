@@ -1,6 +1,8 @@
 mod colors;
+mod shell;
 
 use colors::TerminalColors;
+use shell::get_shell;
 fn main() {
     colors::print_color(TerminalColors::Blue, "Hostname: ");
     colors::println_color(TerminalColors::Black, read_host_name());
@@ -15,7 +17,7 @@ fn main() {
     colors::println_color(TerminalColors::Black, read_uptime());
 
     colors::print_color(TerminalColors::LightBlue, "Shell: ");
-    colors::println_color(TerminalColors::Black, std::env!("SHELL"));
+    colors::println_color(TerminalColors::Black, get_shell());
 }
 
 fn read_host_name() -> String {
