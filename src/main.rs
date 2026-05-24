@@ -1,9 +1,37 @@
+mod colors;
+
+use colors::TerminalColors;
 fn main() {
-    println!("Hostname: {}", read_host_name());
-    println!("OS Name: {}", read_os_name());
-    println!("Kernel: {}", read_kernel());
-    println!("Uptime: {}", read_uptime());
-    println!("Shell: {}", std::env!("SHELL"))
+    println!(
+        "{}Hostname: {}{}",
+        TerminalColors::Blue,
+        TerminalColors::Black,
+        read_host_name()
+    );
+    println!(
+        "{}OS Name: {}{}",
+        TerminalColors::Green,
+        TerminalColors::Black,
+        read_os_name()
+    );
+    println!(
+        "{}Kernel: {}{}",
+        TerminalColors::Red,
+        TerminalColors::Black,
+        read_kernel()
+    );
+    println!(
+        "{}Uptime: {}{}",
+        TerminalColors::Yellow,
+        TerminalColors::Black,
+        read_uptime()
+    );
+    println!(
+        "{}Shell: {}{}",
+        TerminalColors::Blue,
+        TerminalColors::Black,
+        std::env!("SHELL")
+    )
 }
 
 fn read_host_name() -> String {
