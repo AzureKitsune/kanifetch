@@ -23,6 +23,7 @@ pub enum TerminalColors {
 }
 
 impl TerminalColors {
+    // Enum -> str
     pub fn as_str(&self) -> &'static str {
         match self {
             TerminalColors::Black => "\x1b[0;30m",
@@ -47,7 +48,17 @@ impl TerminalColors {
 }
 
 impl fmt::Display for TerminalColors {
+    // Needed to allow usage in format strings?
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_str())
     }
+}
+
+// std::fmt::Display means its convertable to a string?
+pub fn print_color<T: std::fmt::Display>(color: TerminalColors, msg: T) {
+    print!("{}{}", color.as_str(), msg);
+}
+
+pub fn println_color<T: std::fmt::Display>(color: TerminalColors, msg: T) {
+    print_color(color, format!("{}\n", msg));
 }
