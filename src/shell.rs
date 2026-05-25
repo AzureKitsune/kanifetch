@@ -1,5 +1,3 @@
-use std::env::args;
-
 fn get_shell_version(shell: &str) -> String {
     String::from_utf8(
         std::process::Command::new(shell)

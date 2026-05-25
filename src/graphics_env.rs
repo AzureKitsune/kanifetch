@@ -1,0 +1,73 @@
+pub enum GraphicalSessionType {
+    X11,
+    Wayland,
+    Unknown,
+}
+
+impl GraphicalSessionType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            GraphicalSessionType::Wayland => "wayland",
+            GraphicalSessionType::X11 => "x11",
+            GraphicalSessionType::Unknown => "unknown",
+        }
+    }
+
+    pub fn from_str(value: &str) -> GraphicalSessionType {
+        match value.to_lowercase().trim() {
+            "x11" => GraphicalSessionType::X11,
+            "wayland" => GraphicalSessionType::Wayland,
+            _ => GraphicalSessionType::Unknown,
+        }
+    }
+}
+
+pub struct DesktopEnv {
+    pub desktop_env: String,
+    pub desktop_env_version: String,
+    pub window_manager: String,
+    pub window_manager_version: String,
+    pub session_type: GraphicalSessionType,
+}
+
+pub fn get_desktop_env() -> DesktopEnv {
+    let session_type: String =
+        std::env::var("XDG_SESSION_TYPE").expect("Unable to get graphical session type.");
+
+    let current_session: String =
+        std::env::var("XDG_CURRENT_DESKTOP").expect("Unable to get desktop type.");
+
+    let mut desktop_env_version: String = String::new();
+
+    let (window_manager, window_manager_ver) = match current_session.to_lowercase().trim() {
+        "kde" => {
+            let kwin_ver = String::from_utf8(
+                std::process::Command::new("kwin")
+                    .arg("--version")
+                    .output()
+                    .expect("Unable to get kwin version.")
+                    .stdout,
+            )
+            .expect("Unable to parse kwin version output.")
+            .trim()
+            .split(' ')
+            .nth(1)
+            .expect("Unable to get DE version.")
+            .to_string();
+
+            desktop_env_version = kwin_ver.to_string();
+            ("kwin", kwin_ver)
+        }
+        _ => ("Unknown", String::from("Unknown")),
+    };
+
+    let result = DesktopEnv {
+        desktop_env: current_session,
+        desktop_env_version: desktop_env_version,
+        window_manager: window_manager.to_string(),
+        window_manager_version: window_manager_ver,
+        session_type: GraphicalSessionType::from_str(session_type.as_str()),
+    };
+
+    result
+}

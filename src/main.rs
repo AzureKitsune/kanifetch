@@ -1,4 +1,5 @@
 mod colors;
+mod graphics_env;
 mod shell;
 
 use colors::TerminalColors;
@@ -18,6 +19,28 @@ fn main() {
 
     colors::print_color(TerminalColors::LightBlue, "Shell: ");
     colors::println_color(TerminalColors::Black, get_shell());
+
+    let desktop_env = graphics_env::get_desktop_env();
+
+    colors::print_color(TerminalColors::LightPurple, "Session: ");
+    colors::println_color(TerminalColors::Black, desktop_env.session_type.as_str());
+
+    colors::print_color(TerminalColors::LightGreen, "DE: ");
+    colors::println_color(
+        TerminalColors::Black,
+        format!(
+            "{} ({})",
+            desktop_env.desktop_env, desktop_env.desktop_env_version
+        ),
+    );
+    colors::print_color(TerminalColors::Green, "WM: ");
+    colors::println_color(
+        TerminalColors::Black,
+        format!(
+            "{} ({})",
+            desktop_env.window_manager, desktop_env.window_manager_version
+        ),
+    );
 }
 
 fn read_host_name() -> String {
