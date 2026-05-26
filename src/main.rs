@@ -5,8 +5,7 @@ mod shell;
 use colors::TerminalColors;
 use shell::get_shell;
 fn main() {
-    colors::print_color(TerminalColors::Blue, "Hostname: ");
-    colors::println_color(TerminalColors::Black, read_host_name());
+    print_header();
 
     colors::print_color(TerminalColors::Green, "OS Name: ");
     colors::println_color(TerminalColors::Black, read_os_name());
@@ -41,6 +40,24 @@ fn main() {
             desktop_env.window_manager, desktop_env.window_manager_version
         ),
     );
+}
+
+fn make_separator(length: usize) -> String {
+    //TODO figure out a better way to do this
+    let mut header_sep: Vec<&str> = Vec::new();
+    for _ in 0..length {
+        header_sep.push("-");
+    }
+    header_sep.join("")
+}
+
+fn print_header() {
+    let user = std::env!("USER");
+    let header = format!("{}@{}", user, read_host_name());
+    let header_sep = make_separator(header.len());
+
+    colors::println_color(TerminalColors::LightBlue, header);
+    colors::println_color(TerminalColors::Black, header_sep);
 }
 
 fn read_host_name() -> String {
