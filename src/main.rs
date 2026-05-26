@@ -19,6 +19,9 @@ fn main() {
     colors::print_color(TerminalColors::BoldBlue, "Shell: ");
     colors::println_color(TerminalColors::Black, get_shell());
 
+    colors::print_color(TerminalColors::BoldRed, "Terminal: ");
+    colors::println_color(TerminalColors::Black, detect_terminal());
+
     let desktop_env = graphics_env::get_desktop_env();
 
     colors::print_color(TerminalColors::BoldPurple, "Session: ");
@@ -134,4 +137,28 @@ fn read_uptime() -> String {
     } else {
         String::from("N/A")
     }
+}
+
+fn detect_terminal() -> String {
+    let env_vars = std::env::vars();
+
+    let mut terminal = String::from("Unknown");
+    for (k, v) in env_vars {
+        if k == "KITTY_PID" {
+            terminal = "kitty".to_owned();
+            break;
+        } else if k == "KONSOLE_VERSION" {
+            terminal = "konsole".to_owned();
+            break;
+        } else if k == "ALACRITTY_WINDOW_ID" {
+            terminal = "alacritty".to_owned();
+            break;
+        } else if k == "TERM_PROGRAM" {
+            let t = v.to_owned();
+            terminal = t;
+            break;
+        }
+    }
+
+    terminal.to_string()
 }
