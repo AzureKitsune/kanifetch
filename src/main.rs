@@ -83,7 +83,6 @@ fn read_os_name() -> String {
                     .trim()
                     .trim_start_matches("\"")
                     .trim_end_matches("\"")
-                    .trim()
                     .to_string(),
                 None => "N/A".to_string(),
             }
