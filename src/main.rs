@@ -7,13 +7,13 @@ use shell::get_shell;
 fn main() {
     print_header();
 
-    colors::print_color(TerminalColors::Green, "OS Name: ");
+    colors::print_color(TerminalColors::BoldGreen, "OS Name: ");
     colors::println_color(TerminalColors::Black, read_os_name());
 
-    colors::print_color(TerminalColors::Red, "Kernel: ");
+    colors::print_color(TerminalColors::BoldRed, "Kernel: ");
     colors::println_color(TerminalColors::Black, read_kernel());
 
-    colors::print_color(TerminalColors::Yellow, "Uptime: ");
+    colors::print_color(TerminalColors::BoldCyan, "Uptime: ");
     colors::println_color(TerminalColors::Black, read_uptime());
 
     colors::print_color(TerminalColors::BoldBlue, "Shell: ");
@@ -32,7 +32,7 @@ fn main() {
             desktop_env.desktop_env, desktop_env.desktop_env_version
         ),
     );
-    colors::print_color(TerminalColors::Green, "WM: ");
+    colors::print_color(TerminalColors::BoldPurple, "WM: ");
     colors::println_color(
         TerminalColors::Black,
         format!(
