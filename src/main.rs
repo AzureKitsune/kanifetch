@@ -16,15 +16,15 @@ fn main() {
     colors::print_color(TerminalColors::Yellow, "Uptime: ");
     colors::println_color(TerminalColors::Black, read_uptime());
 
-    colors::print_color(TerminalColors::LightBlue, "Shell: ");
+    colors::print_color(TerminalColors::BoldBlue, "Shell: ");
     colors::println_color(TerminalColors::Black, get_shell());
 
     let desktop_env = graphics_env::get_desktop_env();
 
-    colors::print_color(TerminalColors::LightPurple, "Session: ");
+    colors::print_color(TerminalColors::BoldPurple, "Session: ");
     colors::println_color(TerminalColors::Black, desktop_env.session_type.as_str());
 
-    colors::print_color(TerminalColors::LightGreen, "DE: ");
+    colors::print_color(TerminalColors::BoldGreen, "DE: ");
     colors::println_color(
         TerminalColors::Black,
         format!(
@@ -56,7 +56,7 @@ fn print_header() {
     let header = format!("{}@{}", user, read_host_name());
     let header_sep = make_separator(header.len());
 
-    colors::println_color(TerminalColors::LightBlue, header);
+    colors::println_color(TerminalColors::BoldBlue, header);
     colors::println_color(TerminalColors::Black, header_sep);
 }
 
