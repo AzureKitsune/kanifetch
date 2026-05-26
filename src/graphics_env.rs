@@ -58,6 +58,22 @@ pub fn get_desktop_env() -> DesktopEnv {
             desktop_env_version = kwin_ver.to_string();
             ("kwin", kwin_ver)
         }
+        "gnome" => {
+            // untested
+            let mutter_ver = String::from_utf8(
+                std::process::Command::new("gnome-shell")
+                    .arg("--version")
+                    .output()
+                    .expect("Unable to get gnome-shell (mutter) version.")
+                    .stdout,
+            )
+            .expect("Unable to parse gnome-shell (mutter) version output.")
+            .trim()
+            .to_string();
+
+            desktop_env_version = mutter_ver.to_string();
+            ("mutter", mutter_ver)
+        }
         _ => ("Unknown", String::from("Unknown")),
     };
 
