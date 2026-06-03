@@ -1,5 +1,6 @@
 mod colors;
 mod graphics_env;
+mod network;
 mod shell;
 
 use colors::TerminalColors;
@@ -43,6 +44,18 @@ fn main() {
             desktop_env.window_manager, desktop_env.window_manager_version
         ),
     );
+
+    let net_info = network::get_ipv4_info();
+    match net_info {
+        Ok(item) => {
+            colors::print_color(
+                TerminalColors::BoldPurple,
+                format!("NET ({}/{}): ", item.name, item.address_type),
+            );
+            colors::println_color(TerminalColors::Black, item.address);
+        }
+        Err(_) => {}
+    }
 }
 
 fn make_separator(length: usize) -> String {
