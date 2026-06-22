@@ -1,4 +1,4 @@
-use std::fmt::format;
+use std::{fmt::format, process::Command};
 
 pub enum CPUVendor {
     AMD,
@@ -151,9 +151,26 @@ pub fn get_hardware_info() -> HardwareInfo {
 
     // TODO handle Intel, Nvidia and other CPUs
 
-    // TODO handle discrete gpus
-
-    let discrete_gpus = get_discrete_gpus();
+    let mut discrete_gpus = get_discrete_gpus();
+    if igpu_name != None {
+        // Removes igpu from discrete gpu list
+        let full_igpu_name = discrete_gpus
+            .iter()
+            .find(|&item| {
+                item.contains(
+                    igpu_name
+                        .clone()
+                        .expect("Unable to get igpu name.")
+                        .as_str(),
+                )
+            })
+            .expect("Unable to get igpu name.");
+        discrete_gpus = discrete_gpus
+            .iter()
+            .filter(|&item| item != full_igpu_name)
+            .map(|item| item.to_string())
+            .collect();
+    }
 
     HardwareInfo {
         cpu_name,
@@ -165,7 +182,7 @@ pub fn get_hardware_info() -> HardwareInfo {
 pub fn get_discrete_gpus() -> Vec<String> {
     let mut detected_gpus = Vec::new();
     if std::path::Path::new("/proc/driver/nvidia/gpus/*/information").exists() {
-        // handle Nvidia GPUs
+        // handle Nvidia dGPUs
         match std::fs::read_to_string("/proc/driver/nvidia/gpus/*/information") {
             Err(_e) => {}
             Ok(contents) => {
@@ -188,7 +205,27 @@ pub fn get_discrete_gpus() -> Vec<String> {
         }
     }
 
-    // TODO detect AMD and Intel dGPUs
+    // detect AMD and Intel dGPUs via mesa
+    let glinfo_output = String::from_utf8(
+        std::process::Command::new("glxinfo")
+            .output()
+            .expect("Unable to get opengl info.")
+            .stdout,
+    )
+    .expect("Unable to parse opengl info output.");
+    let opengl_renders = glinfo_output
+        .split_terminator('\n')
+        .filter(|&item| item.starts_with("OpenGL renderer string:") && !item.contains("Nvidia"))
+        .map(|item| {
+            item.split(":")
+                .last()
+                .expect("Unable to parse opengl render info.")
+                .trim()
+        });
+
+    for gpu in opengl_renders {
+        detected_gpus.push(gpu.to_string());
+    }
 
     return detected_gpus;
 }
