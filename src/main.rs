@@ -1,5 +1,5 @@
 mod colors;
-mod graphics_env;
+mod desktop_env;
 mod hardware;
 mod network;
 mod shell;
@@ -25,7 +25,7 @@ fn main() {
     colors::print_color(TerminalColors::BoldRed, "Terminal: ");
     colors::println_color(TerminalColors::White, detect_terminal());
 
-    let desktop_env = graphics_env::get_desktop_env();
+    let desktop_env = desktop_env::get_desktop_env();
 
     colors::print_color(TerminalColors::BoldPurple, "Session: ");
     colors::println_color(TerminalColors::White, desktop_env.session_type.as_str());

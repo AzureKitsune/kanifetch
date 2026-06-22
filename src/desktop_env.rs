@@ -1,23 +1,23 @@
-pub enum GraphicalSessionType {
+pub enum DesktopSessionType {
     X11,
     Wayland,
     Unknown,
 }
 
-impl GraphicalSessionType {
+impl DesktopSessionType {
     pub fn as_str(&self) -> &'static str {
         match self {
-            GraphicalSessionType::Wayland => "wayland",
-            GraphicalSessionType::X11 => "x11",
-            GraphicalSessionType::Unknown => "unknown",
+            DesktopSessionType::Wayland => "wayland",
+            DesktopSessionType::X11 => "x11",
+            DesktopSessionType::Unknown => "unknown",
         }
     }
 
-    pub fn from_str(value: &str) -> GraphicalSessionType {
+    pub fn from_str(value: &str) -> DesktopSessionType {
         match value.to_lowercase().trim() {
-            "x11" => GraphicalSessionType::X11,
-            "wayland" => GraphicalSessionType::Wayland,
-            _ => GraphicalSessionType::Unknown,
+            "x11" => DesktopSessionType::X11,
+            "wayland" => DesktopSessionType::Wayland,
+            _ => DesktopSessionType::Unknown,
         }
     }
 }
@@ -27,7 +27,7 @@ pub struct DesktopEnv {
     pub desktop_env_version: String,
     pub window_manager: String,
     pub window_manager_version: String,
-    pub session_type: GraphicalSessionType,
+    pub session_type: DesktopSessionType,
 }
 
 pub fn get_desktop_env() -> DesktopEnv {
@@ -82,7 +82,7 @@ pub fn get_desktop_env() -> DesktopEnv {
         desktop_env_version: desktop_env_version,
         window_manager: window_manager.to_string(),
         window_manager_version: window_manager_ver,
-        session_type: GraphicalSessionType::from_str(session_type.as_str()),
+        session_type: DesktopSessionType::from_str(session_type.as_str()),
     };
 
     result
