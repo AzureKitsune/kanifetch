@@ -188,5 +188,7 @@ pub fn get_discrete_gpus() -> Vec<String> {
         }
     }
 
+    // TODO detect AMD and Intel dGPUs
+
     return detected_gpus;
 }

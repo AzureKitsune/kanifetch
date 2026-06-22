@@ -68,6 +68,14 @@ fn main() {
         colors::print_color(TerminalColors::White, igpu_name);
         colors::println_color(TerminalColors::BoldCyan, " [Integrated]");
     }
+
+    if let Some(dgpu_names) = hardware_info.discrete_gpu_names {
+        for dgpu_name in dgpu_names {
+            colors::print_color(TerminalColors::BoldBlue, "GPU: ");
+            colors::print_color(TerminalColors::White, dgpu_name); // TODO maybe color code gpu names by vendor name
+            colors::println_color(TerminalColors::BoldCyan, " [Discrete]");
+        }
+    }
 }
 
 fn make_separator(length: usize) -> String {
