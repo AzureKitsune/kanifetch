@@ -1,9 +1,11 @@
 mod colors;
 mod graphics_env;
+mod hardware;
 mod network;
 mod shell;
 
 use colors::TerminalColors;
+use hardware::get_hardware_info;
 use shell::get_shell;
 fn main() {
     print_header();
@@ -55,6 +57,16 @@ fn main() {
             colors::println_color(TerminalColors::Black, item.address);
         }
         Err(_) => {}
+    }
+
+    let hardware_info = get_hardware_info();
+    colors::print_color(TerminalColors::BoldRed, "CPU: ");
+    colors::println_color(TerminalColors::Black, hardware_info.cpu_name);
+
+    if let Some(igpu_name) = hardware_info.integrated_gpu_name {
+        colors::print_color(TerminalColors::BoldBlue, "GPU: ");
+        colors::print_color(TerminalColors::Black, igpu_name);
+        colors::println_color(TerminalColors::BoldCyan, " [Integrated]");
     }
 }
 
