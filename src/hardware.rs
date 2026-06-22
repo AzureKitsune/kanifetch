@@ -20,7 +20,9 @@ impl CPUVendor {
 pub struct CPUInfo {
     pub cpu_name: String,
     pub core_count: i32,
+    pub thread_count: i32,
     pub vendor: CPUVendor,
+    pub is_smt_enabled: bool,
 }
 
 pub struct HardwareInfo {
@@ -31,14 +33,8 @@ pub struct HardwareInfo {
 
 pub fn get_cpu() -> CPUInfo {
     let cpu_info = std::fs::read_to_string("/proc/cpuinfo");
-    match cpu_info {
-        Err(_e) => {
-            return CPUInfo {
-                cpu_name: "N/A".to_string(),
-                core_count: -1,
-                vendor: CPUVendor::Unknown,
-            };
-        }
+    let (cpu_name, core_count, thread_count, vendor) = match cpu_info {
+        Err(_e) => ("N/A".to_string(), -1, -1, CPUVendor::Unknown),
         Ok(contents) => {
             let mut lines = contents.split_terminator("\n");
             let cpu_name_line = lines.find(|&item| item.starts_with("model name"));
@@ -65,6 +61,18 @@ pub fn get_cpu() -> CPUInfo {
                 None => -1,
             };
 
+            let thread_count_line = lines.find(|&item| item.starts_with("siblings"));
+            let thread_count = match thread_count_line {
+                Some(val) => val
+                    .split(":")
+                    .nth(1)
+                    .expect("Can't read cpu thread count")
+                    .trim()
+                    .parse()
+                    .expect("Can't parse cpu thread count"),
+                None => -1,
+            };
+
             let vendor_line = lines.find(|&item| item.starts_with("vendor_id"));
             let vendor = match vendor_line {
                 Some(val) => CPUVendor::from_str(
@@ -76,13 +84,23 @@ pub fn get_cpu() -> CPUInfo {
                 None => CPUVendor::Unknown,
             };
 
-            return CPUInfo {
-                cpu_name,
-                core_count,
-                vendor,
-            };
+            (cpu_name, core_count, thread_count, vendor)
         }
-    }
+    };
+
+    // https://unix.stackexchange.com/a/522295
+    let is_smt_enabled = match std::fs::read_to_string("/sys/devices/system/cpu/smt/active") {
+        Err(_e) => false, // Assume false on error. TODO handle this better
+        Ok(contents) => contents.trim() == "1",
+    }; // this could be inferred from core_count == thread_count
+
+    return CPUInfo {
+        cpu_name,
+        core_count,
+        thread_count,
+        vendor,
+        is_smt_enabled,
+    };
 }
 
 pub fn get_hardware_info() -> HardwareInfo {
@@ -101,13 +119,14 @@ pub fn get_hardware_info() -> HardwareInfo {
                     .collect::<Vec<_>>();
 
                 cpu_name = format!(
-                    "{} ({} cores)",
+                    "{} ({} cores / {} threads)",
                     name_split
                         .get(0)
                         .expect("Unable to parse cpu name")
                         .trim()
                         .to_string(),
-                    full_cpu_info.core_count
+                    full_cpu_info.core_count,
+                    full_cpu_info.thread_count
                 );
                 igpu_name = Some(format!(
                     "AMD Radeon {}",
@@ -119,8 +138,8 @@ pub fn get_hardware_info() -> HardwareInfo {
                 ));
             } else {
                 cpu_name = format!(
-                    "{} ({} cores)",
-                    full_cpu_info.cpu_name, full_cpu_info.core_count
+                    "{} ({} cores / {} threads)",
+                    full_cpu_info.cpu_name, full_cpu_info.core_count, full_cpu_info.thread_count
                 );
             }
         }
