@@ -6,7 +6,7 @@ fn get_shell_version(shell: &str) -> String {
             .expect("Unknown")
             .stdout,
     )
-    .expect("Unable to read output")
+    .expect("Unable to read shell version output.")
 }
 
 pub fn get_shell() -> String {

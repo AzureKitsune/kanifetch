@@ -42,7 +42,7 @@ pub fn get_cpu() -> CPUInfo {
                 Some(val) => val
                     .split(":")
                     .nth(1)
-                    .expect("Can't read cpu name")
+                    .expect("Can't read cpu name.")
                     .trim()
                     .to_string(),
                 None => "N/A".to_string(),
@@ -54,10 +54,10 @@ pub fn get_cpu() -> CPUInfo {
                 Some(val) => val
                     .split(":")
                     .nth(1)
-                    .expect("Can't read cpu core count")
+                    .expect("Can't read cpu core count.")
                     .trim()
                     .parse()
-                    .expect("Can't parse cpu core count"),
+                    .expect("Can't parse cpu core count."),
                 None => -1,
             };
 
@@ -66,10 +66,10 @@ pub fn get_cpu() -> CPUInfo {
                 Some(val) => val
                     .split(":")
                     .nth(1)
-                    .expect("Can't read cpu thread count")
+                    .expect("Can't read cpu thread count.")
                     .trim()
                     .parse()
-                    .expect("Can't parse cpu thread count"),
+                    .expect("Can't parse cpu thread count."),
                 None => -1,
             };
 
@@ -78,7 +78,7 @@ pub fn get_cpu() -> CPUInfo {
                 Some(val) => CPUVendor::from_str(
                     val.split(":")
                         .nth(1)
-                        .expect("Can't read vendor name")
+                        .expect("Can't read vendor name.")
                         .trim(),
                 ),
                 None => CPUVendor::Unknown,
@@ -122,7 +122,7 @@ pub fn get_hardware_info() -> HardwareInfo {
                     "{} ({} cores / {} threads)",
                     name_split
                         .get(0)
-                        .expect("Unable to parse cpu name")
+                        .expect("Unable to parse cpu name.")
                         .trim()
                         .to_string(),
                     full_cpu_info.core_count,
@@ -132,7 +132,7 @@ pub fn get_hardware_info() -> HardwareInfo {
                     "AMD Radeon {}",
                     name_split
                         .get(1)
-                        .expect("Unable to parse igpu name")
+                        .expect("Unable to parse igpu name.")
                         .trim()
                         .to_string()
                 ));

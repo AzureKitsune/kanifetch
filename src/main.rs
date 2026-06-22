@@ -115,7 +115,7 @@ fn read_os_name() -> String {
                 Some(val) => val
                     .split("=")
                     .nth(1)
-                    .expect("Can't read os name")
+                    .expect("Can't read os name.")
                     .trim()
                     .trim_start_matches("\"")
                     .trim_end_matches("\"")
