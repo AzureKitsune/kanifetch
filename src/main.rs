@@ -11,28 +11,28 @@ fn main() {
     print_header();
 
     colors::print_color(TerminalColors::BoldGreen, "OS Name: ");
-    colors::println_color(TerminalColors::Black, read_os_name());
+    colors::println_color(TerminalColors::White, read_os_name());
 
     colors::print_color(TerminalColors::BoldRed, "Kernel: ");
-    colors::println_color(TerminalColors::Black, read_kernel());
+    colors::println_color(TerminalColors::White, read_kernel());
 
     colors::print_color(TerminalColors::BoldCyan, "Uptime: ");
-    colors::println_color(TerminalColors::Black, read_uptime());
+    colors::println_color(TerminalColors::White, read_uptime());
 
     colors::print_color(TerminalColors::BoldBlue, "Shell: ");
-    colors::println_color(TerminalColors::Black, get_shell());
+    colors::println_color(TerminalColors::White, get_shell());
 
     colors::print_color(TerminalColors::BoldRed, "Terminal: ");
-    colors::println_color(TerminalColors::Black, detect_terminal());
+    colors::println_color(TerminalColors::White, detect_terminal());
 
     let desktop_env = graphics_env::get_desktop_env();
 
     colors::print_color(TerminalColors::BoldPurple, "Session: ");
-    colors::println_color(TerminalColors::Black, desktop_env.session_type.as_str());
+    colors::println_color(TerminalColors::White, desktop_env.session_type.as_str());
 
     colors::print_color(TerminalColors::BoldGreen, "DE: ");
     colors::println_color(
-        TerminalColors::Black,
+        TerminalColors::White,
         format!(
             "{} ({})",
             desktop_env.desktop_env, desktop_env.desktop_env_version
@@ -40,7 +40,7 @@ fn main() {
     );
     colors::print_color(TerminalColors::BoldPurple, "WM: ");
     colors::println_color(
-        TerminalColors::Black,
+        TerminalColors::White,
         format!(
             "{} ({})",
             desktop_env.window_manager, desktop_env.window_manager_version
@@ -54,18 +54,18 @@ fn main() {
                 TerminalColors::BoldPurple,
                 format!("NET ({}/{}): ", item.name, item.address_type),
             );
-            colors::println_color(TerminalColors::Black, item.address);
+            colors::println_color(TerminalColors::White, item.address);
         }
         Err(_) => {}
     }
 
     let hardware_info = get_hardware_info();
     colors::print_color(TerminalColors::BoldRed, "CPU: ");
-    colors::println_color(TerminalColors::Black, hardware_info.cpu_name);
+    colors::println_color(TerminalColors::White, hardware_info.cpu_name);
 
     if let Some(igpu_name) = hardware_info.integrated_gpu_name {
         colors::print_color(TerminalColors::BoldBlue, "GPU: ");
-        colors::print_color(TerminalColors::Black, igpu_name);
+        colors::print_color(TerminalColors::White, igpu_name);
         colors::println_color(TerminalColors::BoldCyan, " [Integrated]");
     }
 }
@@ -85,7 +85,7 @@ fn print_header() {
     let header_sep = make_separator(header.len());
 
     colors::println_color(TerminalColors::BoldBlue, header);
-    colors::println_color(TerminalColors::Black, header_sep);
+    colors::println_color(TerminalColors::White, header_sep);
 }
 
 fn read_host_name() -> String {
