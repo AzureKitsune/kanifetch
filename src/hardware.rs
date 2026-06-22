@@ -149,11 +149,44 @@ pub fn get_hardware_info() -> HardwareInfo {
         _ => {}
     }
 
-    //TODO handle Intel, Nvidia and other CPUs
+    // TODO handle Intel, Nvidia and other CPUs
+
+    // TODO handle discrete gpus
+
+    let discrete_gpus = get_discrete_gpus();
 
     HardwareInfo {
         cpu_name,
         integrated_gpu_name: igpu_name,
-        discrete_gpu_names: None,
+        discrete_gpu_names: Some(discrete_gpus),
     }
+}
+
+pub fn get_discrete_gpus() -> Vec<String> {
+    let mut detected_gpus = Vec::new();
+    if std::path::Path::new("/proc/driver/nvidia/gpus/*/information").exists() {
+        // handle Nvidia GPUs
+        match std::fs::read_to_string("/proc/driver/nvidia/gpus/*/information") {
+            Err(_e) => {}
+            Ok(contents) => {
+                let model_lines = contents
+                    .split_terminator("\n")
+                    .filter(|&item| item.starts_with("Model:"));
+
+                for line in model_lines {
+                    let gpu_name: String = line
+                        .split(":")
+                        .collect::<Vec<_>>()
+                        .get(1)
+                        .expect("Unable to fetch gpu name.")
+                        .trim()
+                        .to_string();
+
+                    detected_gpus.push(gpu_name);
+                }
+            }
+        }
+    }
+
+    return detected_gpus;
 }
