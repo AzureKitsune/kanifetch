@@ -11,6 +11,7 @@ impl CPUVendor {
     pub fn from_str(value: &str) -> CPUVendor {
         match value {
             "AuthenticAMD" => CPUVendor::AMD,
+            "Intel" => CPUVendor::Intel,
             _ => CPUVendor::Unknown,
         }
     }
