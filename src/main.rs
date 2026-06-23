@@ -61,7 +61,13 @@ fn main() {
 
     let hardware_info = get_hardware_info();
     colors::print_color(TerminalColors::BoldRed, "CPU: ");
-    colors::println_color(TerminalColors::White, hardware_info.cpu_name);
+    colors::print_color(TerminalColors::White, hardware_info.cpu_name);
+
+    if hardware_info.is_cpu_smt_enabled {
+        colors::println_color(TerminalColors::BoldGreen, " [+SMT]");
+    } else {
+        colors::println_color(TerminalColors::BoldRed, " [-SMT]");
+    }
 
     if let Some(igpu_name) = hardware_info.integrated_gpu_name {
         colors::print_color(TerminalColors::BoldBlue, "GPU: ");

@@ -27,6 +27,7 @@ pub struct CPUInfo {
 
 pub struct HardwareInfo {
     pub cpu_name: String, // TODO account for multiple cpus
+    pub is_cpu_smt_enabled: bool,
     pub integrated_gpu_name: Option<String>,
     pub discrete_gpu_names: Option<Vec<String>>,
 }
@@ -174,6 +175,7 @@ pub fn get_hardware_info() -> HardwareInfo {
 
     HardwareInfo {
         cpu_name,
+        is_cpu_smt_enabled: full_cpu_info.is_smt_enabled,
         integrated_gpu_name: igpu_name,
         discrete_gpu_names: Some(discrete_gpus),
     }
