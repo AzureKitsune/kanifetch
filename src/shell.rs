@@ -21,7 +21,13 @@ pub fn get_shell() -> String {
     let shell = ppid_path.to_str().expect("Unable to determine shell.");
 
     match shell.trim() {
-        "/usr/bin/zsh" | "/bin/zsh" => get_shell_version("zsh").trim().to_string(),
+        "/usr/bin/zsh" | "/bin/zsh" => {
+            let output = get_shell_version("zsh");
+            let trimmed_output = output.trim();
+            let output_parts: Vec<_> = trimmed_output.split("(").collect();
+            let name_and_version = output_parts.get(0).expect("Unable to get zsh version.");
+            name_and_version.trim().to_string()
+        }
         "/usr/bin/bash" | "/bin/bash" => {
             let output = get_shell_version("bash");
             let output_lines: Vec<_> = output.split_terminator("\n").collect();
