@@ -9,10 +9,18 @@ fn get_shell_version(shell: &str) -> String {
     .expect("Unable to read shell version output.")
 }
 
-pub fn get_shell() -> String {
-    let shell = std::env!("SHELL"); // TODO this is for the login shell. if a new shell is spawned and then this gets executed, it will report the wrong shell.
+// pub fn get_login_shell() -> String {
+//     std::env!("SHELL").to_string()
+// }
 
-    match shell {
+pub fn get_shell() -> String {
+    let ppid = std::os::unix::process::parent_id();
+    let ppid_path =
+        std::fs::read_link(format!("/proc/{ppid}/exe")).expect("Unable to determine shell.");
+
+    let shell = ppid_path.to_str().expect("Unable to determine shell.");
+
+    match shell.trim() {
         "/usr/bin/zsh" | "/bin/zsh" => get_shell_version("zsh").trim().to_string(),
         "/usr/bin/bash" | "/bin/bash" => {
             let output = get_shell_version("bash");
@@ -38,6 +46,6 @@ pub fn get_shell() -> String {
             )
         }
 
-        _ => shell.to_string(),
+        _ => shell.trim().to_string(),
     }
 }
