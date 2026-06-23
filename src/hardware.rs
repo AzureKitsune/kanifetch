@@ -1,5 +1,4 @@
-use std::{fmt::format, process::Command};
-
+#[allow(unused)]
 pub enum CPUVendor {
     AMD,
     Intel,

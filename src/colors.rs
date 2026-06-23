@@ -2,6 +2,7 @@
 
 use core::fmt;
 
+#[allow(unused)]
 pub enum TerminalColors {
     Black,
     Red,
