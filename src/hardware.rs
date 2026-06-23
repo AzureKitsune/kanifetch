@@ -207,14 +207,14 @@ pub fn get_discrete_gpus() -> Vec<String> {
     }
 
     // detect AMD and Intel dGPUs via mesa
-    let glinfo_output = String::from_utf8(
+    let glxinfo_output = String::from_utf8(
         std::process::Command::new("glxinfo")
             .output()
             .expect("Unable to get opengl info.")
             .stdout,
     )
     .expect("Unable to parse opengl info output.");
-    let opengl_renders = glinfo_output
+    let opengl_renders = glxinfo_output
         .split_terminator('\n')
         .filter(|&item| item.starts_with("OpenGL renderer string:") && !item.contains("Nvidia"))
         .map(|item| {
