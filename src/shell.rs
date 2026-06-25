@@ -26,14 +26,16 @@ pub fn get_shell() -> String {
             let trimmed_output = output.trim();
             let output_parts: Vec<_> = trimmed_output.split("(").collect();
             let name_and_version = output_parts.get(0).expect("Unable to get zsh version.");
-            name_and_version.trim().to_string()
+
+            return name_and_version.trim().to_string();
         }
         "/usr/bin/bash" | "/bin/bash" => {
             let output = get_shell_version("bash");
             let output_lines: Vec<_> = output.split_terminator("\n").collect();
             let first_line = output_lines.first().expect("Unknown");
             let first_line_clauses: Vec<&str> = first_line.split_terminator(",").collect();
-            format!(
+
+            return format!(
                 "bash {}",
                 first_line_clauses
                     .iter()
@@ -41,15 +43,16 @@ pub fn get_shell() -> String {
                     .expect("Unknown")
                     .to_string()
                     .trim()
-            )
+            );
         }
         "/usr/bin/fish" | "/bin/fish" => {
             let output = get_shell_version("fish");
             let clauses: Vec<&str> = output.split_terminator(",").collect();
-            format!(
+
+            return format!(
                 "fish {}",
                 clauses.iter().nth(1).expect("Unknown").to_string().trim()
-            )
+            );
         }
 
         _ => shell.trim().to_string(),

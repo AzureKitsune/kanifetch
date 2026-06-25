@@ -37,7 +37,14 @@ pub fn get_cpu() -> CPUInfo {
     let (cpu_name, core_count, thread_count, vendor) = match cpu_info {
         Err(_e) => ("N/A".to_string(), -1, -1, CPUVendor::Unknown),
         Ok(contents) => {
-            let mut lines = contents.split_terminator("\n");
+            let all_procs: Vec<_> = contents.split_terminator("\n\n").collect();
+
+            let first_proc = all_procs.get(0);
+            if first_proc.is_none() {
+                ("N/A".to_string(), -1, -1, CPUVendor::Unknown);
+            }
+
+            let mut lines = first_proc.unwrap().split_terminator("\n");
             let cpu_name_line = lines.find(|&item| item.starts_with("model name"));
             let cpu_name = match cpu_name_line {
                 Some(val) => val
@@ -49,7 +56,6 @@ pub fn get_cpu() -> CPUInfo {
                 None => "N/A".to_string(),
             };
 
-            //TODO maybe iterate only the first core for all the info we need (model name, core count, etc)
             let core_count_line = lines.find(|&item| item.starts_with("cpu cores"));
             let core_count = match core_count_line {
                 Some(val) => val
