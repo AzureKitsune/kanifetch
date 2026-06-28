@@ -2,6 +2,7 @@ mod colors;
 mod desktop_env;
 mod hardware;
 mod network;
+mod pkg;
 mod shell;
 
 use colors::TerminalColors;
@@ -24,6 +25,17 @@ fn main() {
 
     colors::print_color(TerminalColors::BoldRed, "Terminal: ");
     colors::println_color(TerminalColors::White, detect_terminal());
+
+    if let Ok(pkg_info) = pkg::get_installed_system_pkg() {
+        colors::print_color(TerminalColors::BoldBlue, "Package Manager: ");
+        colors::println_color(
+            TerminalColors::White,
+            format!(
+                "{} ({} packages)",
+                pkg_info.pkg_mgr_name, pkg_info.pkg_count
+            ),
+        );
+    }
 
     let desktop_env = desktop_env::get_desktop_env();
 
