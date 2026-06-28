@@ -9,24 +9,34 @@ use colors::TerminalColors;
 use hardware::get_hardware_info;
 use shell::get_shell;
 fn main() {
+    let os_name = read_os_name();
+    let kernel = read_kernel();
+    let uptime = read_uptime();
+    let shell_name = get_shell();
+    let terminal = detect_terminal();
+    let wrapped_pkg_info = pkg::get_installed_system_pkg();
+    let desktop_env = desktop_env::get_desktop_env();
+    let net_info = network::get_ipv4_info();
+    let hardware_info = get_hardware_info();
+
     print_header();
 
     colors::print_color(TerminalColors::BoldGreen, "OS Name: ");
-    colors::println_color(TerminalColors::White, read_os_name());
+    colors::println_color(TerminalColors::White, os_name);
 
     colors::print_color(TerminalColors::BoldRed, "Kernel: ");
-    colors::println_color(TerminalColors::White, read_kernel());
+    colors::println_color(TerminalColors::White, kernel);
 
     colors::print_color(TerminalColors::BoldCyan, "Uptime: ");
-    colors::println_color(TerminalColors::White, read_uptime());
+    colors::println_color(TerminalColors::White, uptime);
 
     colors::print_color(TerminalColors::BoldBlue, "Shell: ");
-    colors::println_color(TerminalColors::White, get_shell());
+    colors::println_color(TerminalColors::White, shell_name);
 
     colors::print_color(TerminalColors::BoldRed, "Terminal: ");
-    colors::println_color(TerminalColors::White, detect_terminal());
+    colors::println_color(TerminalColors::White, terminal);
 
-    if let Ok(pkg_info) = pkg::get_installed_system_pkg() {
+    if let Ok(pkg_info) = wrapped_pkg_info {
         colors::print_color(TerminalColors::BoldBlue, "Package Manager: ");
         colors::println_color(
             TerminalColors::White,
@@ -36,8 +46,6 @@ fn main() {
             ),
         );
     }
-
-    let desktop_env = desktop_env::get_desktop_env();
 
     colors::print_color(TerminalColors::BoldPurple, "Session: ");
     colors::println_color(TerminalColors::White, desktop_env.session_type.as_str());
@@ -59,7 +67,6 @@ fn main() {
         ),
     );
 
-    let net_info = network::get_ipv4_info();
     match net_info {
         Ok(item) => {
             colors::print_color(
@@ -71,7 +78,6 @@ fn main() {
         Err(_) => {}
     }
 
-    let hardware_info = get_hardware_info();
     colors::print_color(TerminalColors::BoldRed, "CPU: ");
     colors::print_color(TerminalColors::White, hardware_info.cpu_name);
 
