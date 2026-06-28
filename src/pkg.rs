@@ -1,4 +1,4 @@
-use which::{sys, which};
+use which::which;
 
 pub fn get_system_pkg_mgr() -> Result<String, &'static str> {
     if which("apt").is_ok() {
