@@ -1,5 +1,10 @@
 use which::which;
 
+pub struct SystemPackageStats {
+    pub pkg_mgr_name: String,
+    pub pkg_count: usize,
+}
+
 pub fn get_system_pkg_mgr() -> Result<String, &'static str> {
     if which("apt").is_ok() {
         return Ok(String::from("apt"));
@@ -14,11 +19,6 @@ pub fn get_system_pkg_mgr() -> Result<String, &'static str> {
     }
 
     Err("Unsupported package manager.")
-}
-
-pub struct SystemPackageStats {
-    pub pkg_mgr_name: String,
-    pub pkg_count: usize,
 }
 
 pub fn get_installed_system_pkg() -> Result<SystemPackageStats, String> {
@@ -56,4 +56,21 @@ pub fn get_installed_system_pkg() -> Result<SystemPackageStats, String> {
             unwrapped_pkg_mgr
         )),
     }
+}
+
+pub fn get_installed_flatpaks() -> Result<usize, &'static str> {
+    if which("flatpak").is_ok() {
+        let proc = std::process::Command::new("flatpak").arg("list").output();
+
+        let flatpak_list_count = proc
+            .and_then(|output| {
+                let stdout = String::from_utf8(output.stdout).unwrap();
+                let lines: Vec<_> = stdout.split("\n").collect();
+                Ok(lines.len() - 1) // Subtract one for the header line
+            })
+            .or_else(|_| Err("Unable to get package count from flatpak."));
+        return flatpak_list_count;
+    }
+
+    Err("Flatpak isn't installed.")
 }

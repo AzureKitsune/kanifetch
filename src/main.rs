@@ -15,6 +15,7 @@ fn main() {
     let shell_name = get_shell();
     let terminal = detect_terminal();
     let wrapped_pkg_info = pkg::get_installed_system_pkg();
+    let wrapped_flatpak_info = pkg::get_installed_flatpaks();
     let desktop_env = desktop_env::get_desktop_env();
     let net_info = network::get_ipv4_info();
     let hardware_info = get_hardware_info();
@@ -37,12 +38,17 @@ fn main() {
     colors::println_color(TerminalColors::White, terminal);
 
     if let Ok(pkg_info) = wrapped_pkg_info {
+        let flatpak_pkg_count = match wrapped_flatpak_info {
+            Ok(flatpak_pkg_count) => flatpak_pkg_count,
+            Err(_) => 0,
+        };
+
         colors::print_color(TerminalColors::BoldBlue, "Package Manager: ");
         colors::println_color(
             TerminalColors::White,
             format!(
-                "{} ({} packages)",
-                pkg_info.pkg_mgr_name, pkg_info.pkg_count
+                "{} ({} packages), flatpak ({} flatpaks)",
+                pkg_info.pkg_mgr_name, pkg_info.pkg_count, flatpak_pkg_count
             ),
         );
     }
