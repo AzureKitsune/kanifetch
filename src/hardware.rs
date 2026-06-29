@@ -11,7 +11,7 @@ impl CPUVendor {
     pub fn from_str(value: &str) -> CPUVendor {
         match value {
             "AuthenticAMD" => CPUVendor::AMD,
-            "Intel" => CPUVendor::Intel,
+            "GenuineIntel" => CPUVendor::Intel,
             _ => CPUVendor::Unknown,
         }
     }
@@ -48,7 +48,7 @@ pub struct HardwareInfo {
 pub fn get_cpu() -> CPUInfo {
     let cpu_info = std::fs::read_to_string("/proc/cpuinfo");
     let mut igpu_name: Option<String> = None;
-    let mut formatted_cpu_name = String::new();
+
     let (cpu_name, core_count, thread_count, vendor) = match cpu_info {
         Err(_e) => ("N/A".to_string(), -1, -1, CPUVendor::Unknown),
         Ok(contents) => {
@@ -238,6 +238,7 @@ pub fn get_discrete_gpus() -> Vec<String> {
     // detect AMD and Intel dGPUs via mesa
     let glxinfo_output = String::from_utf8(
         std::process::Command::new("glxinfo")
+            .arg("-B")
             .output()
             .expect("Unable to get opengl info.")
             .stdout,
