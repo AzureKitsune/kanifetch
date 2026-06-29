@@ -55,13 +55,19 @@ fn main() {
         "wayland" => format!(
             "{}[{}]{}",
             TerminalColors::BoldBlue,
-            "wayland",
+            "Wayland",
             TerminalColors::White
         ),
         "x11" => format!(
             "{}[{}]{}",
             TerminalColors::BoldGreen,
-            "x11",
+            "X11",
+            TerminalColors::White
+        ),
+        "tty" => format!(
+            "{}[{}]{}",
+            TerminalColors::BoldPurple,
+            "X11",
             TerminalColors::White
         ),
         _ => format!("[{}]", desktop_env.session_type.as_str().to_string()),
