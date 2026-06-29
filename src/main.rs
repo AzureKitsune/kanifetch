@@ -18,6 +18,7 @@ fn main() {
     let terminal = detect_terminal();
     let wrapped_pkg_info = pkg::get_installed_system_pkg();
     let wrapped_flatpak_info = pkg::get_installed_flatpaks();
+    let wrapped_snap_info = pkg::get_installed_snaps();
     let desktop_env = desktop_env::get_desktop_env();
     let net_info = network::get_ipv4_info();
     let hardware_info = get_hardware_info();
@@ -39,7 +40,7 @@ fn main() {
     colors::print_color(TerminalColors::BoldRed, "Terminal: ");
     colors::println_color(TerminalColors::White, terminal);
 
-    print_package_info(&wrapped_pkg_info, &wrapped_flatpak_info);
+    print_package_info(&wrapped_pkg_info, &wrapped_flatpak_info, &wrapped_snap_info);
 
     colors::print_color(TerminalColors::BoldPurple, "Session: ");
     colors::println_color(TerminalColors::White, desktop_env.session_type.as_str());
@@ -151,6 +152,7 @@ fn print_cpu_info(hardware_info: &HardwareInfo) {
 fn print_package_info(
     wrapped_pkg_info: &Result<pkg::SystemPackageStats, String>,
     wrapped_flatpak_info: &Result<usize, &str>,
+    wrapped_snap_info: &Result<usize, &str>,
 ) {
     if let Ok(pkg_info) = wrapped_pkg_info {
         let flatpak_pkg_count = match wrapped_flatpak_info {
@@ -158,7 +160,12 @@ fn print_package_info(
             Err(_) => &0,
         };
 
-        colors::print_color(TerminalColors::BoldBlue, "Package Manager: ");
+        let snap_pkg_count = match wrapped_snap_info {
+            Ok(snap_pkg_count) => snap_pkg_count,
+            Err(_) => &0,
+        };
+
+        colors::print_color(TerminalColors::BoldBlue, "Packages: ");
         colors::print_color(TerminalColors::BoldPurple, pkg_info.pkg_mgr_name.clone());
         colors::print_color(
             TerminalColors::White,
@@ -172,6 +179,16 @@ fn print_package_info(
             colors::print_color(
                 TerminalColors::White,
                 format!(" ({} flatpaks)", flatpak_pkg_count),
+            );
+        }
+
+        if snap_pkg_count > &0 {
+            print!(", ");
+            colors::print_color(TerminalColors::BoldCyan, "snap");
+
+            colors::print_color(
+                TerminalColors::White,
+                format!(" ({} snaps)", snap_pkg_count),
             );
         }
 

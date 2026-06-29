@@ -74,3 +74,20 @@ pub fn get_installed_flatpaks() -> Result<usize, &'static str> {
 
     Err("Flatpak isn't installed.")
 }
+
+pub fn get_installed_snaps() -> Result<usize, &'static str> {
+    if which("snap").is_ok() {
+        let proc = std::process::Command::new("snap").arg("list").output();
+
+        let snap_list_count = proc
+            .and_then(|output| {
+                let stdout = String::from_utf8(output.stdout).unwrap();
+                let lines: Vec<_> = stdout.split("\n").collect();
+                Ok(lines.len() - 1) // Subtract one for the header line
+            })
+            .or_else(|_| Err("Unable to get package count from flatpak."));
+        return snap_list_count;
+    }
+
+    Err("Snap isn't installed.")
+}
