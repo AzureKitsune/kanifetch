@@ -50,7 +50,25 @@ pub fn get_installed_system_pkg() -> Result<SystemPackageStats, String> {
                 pkg_count: pkg_line_count.unwrap_or_else(|_| 0 as usize),
             });
         }
-        "apt" => Err(format!("Not implemented: {}", unwrapped_pkg_mgr)),
+        "apt" => {
+            let proc = std::process::Command::new("dpkg-query")
+                .arg("-W")
+                .arg("-f='${Package}\n'")
+                .output();
+
+            let pkg_line_count = proc
+                .and_then(|output| {
+                    let stdout = String::from_utf8(output.stdout).unwrap();
+                    let lines: Vec<_> = stdout.split("\n").collect();
+                    Ok(lines.len())
+                })
+                .or_else(|_| Err("Unable to get package count from apt."));
+
+            return Ok(SystemPackageStats {
+                pkg_mgr_name: String::from("apt"),
+                pkg_count: pkg_line_count.unwrap_or_else(|_| 0 as usize),
+            });
+        }
         _ => Err(format!(
             "Unsupported package manager: {}",
             unwrapped_pkg_mgr
