@@ -92,10 +92,10 @@ fn main() {
 }
 
 fn format_memory_amount(memory: usize) -> String {
-    if memory >= 10000000 {
+    if memory >= 1048576 {
         // Gibibytes
         return format!("{} GiB", memory / 1024 / 1024);
-    } else if memory >= 1000 {
+    } else if memory >= 1024 {
         // Mebibytes
         return format!("{} MiB", memory / 1024);
     } else {
@@ -107,13 +107,22 @@ fn format_memory_amount(memory: usize) -> String {
 fn print_memory_info(memory_info: MemoryInfo) {
     colors::print_color(TerminalColors::BoldGreen, "Memory: ");
 
-    let formatted_available_mem = format_memory_amount(memory_info.available_mem);
     let formatted_used_mem = format_memory_amount(memory_info.used_mem);
     let formatted_total_mem = format_memory_amount(memory_info.total_mem);
 
     colors::println_color(
         TerminalColors::White,
         format!("{} / {}", formatted_used_mem, formatted_total_mem),
+    );
+
+    colors::print_color(TerminalColors::BoldRed, "Swap: ");
+
+    let formatted_used_swap = format_memory_amount(memory_info.used_swap);
+    let formatted_total_swap = format_memory_amount(memory_info.total_swap);
+
+    colors::println_color(
+        TerminalColors::White,
+        format!("{} / {}", formatted_used_swap, formatted_total_swap),
     );
 }
 

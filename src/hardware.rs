@@ -28,9 +28,12 @@ pub struct CPUInfo {
 
 pub struct MemoryInfo {
     pub total_mem: usize,
-    pub free_mem: usize,
+    // pub free_mem: usize,
     pub available_mem: usize,
     pub used_mem: usize,
+
+    pub total_swap: usize,
+    pub used_swap: usize,
 }
 
 pub struct HardwareInfo {
@@ -280,10 +283,10 @@ pub fn get_memory() -> Result<MemoryInfo, &'static str> {
                 .trim()
                 .split(" ")
                 .nth(0)
-                .unwrap_or("-1")
+                .unwrap_or("0")
                 .trim()
                 .parse()
-                .unwrap_or(-1);
+                .unwrap_or(0);
 
             let available_mem_line = all_lines_iter
                 .find(|&item| item.starts_with("MemAvailable"))
@@ -296,16 +299,49 @@ pub fn get_memory() -> Result<MemoryInfo, &'static str> {
                 .trim()
                 .split(" ")
                 .nth(0)
-                .unwrap_or("-1")
+                .unwrap_or("0")
                 .trim()
                 .parse()
-                .unwrap_or(-1);
+                .unwrap_or(0);
+
+            let total_swap_line = all_lines_iter
+                .find(|&item| item.starts_with("SwapTotal"))
+                .expect("Unable to read total swap memory.");
+            let total_swap = total_swap_line
+                .split(":")
+                .collect::<Vec<_>>()
+                .get(1)
+                .expect("Unable to parse total swap memory.")
+                .trim()
+                .split(" ")
+                .nth(0)
+                .unwrap_or("0")
+                .trim()
+                .parse()
+                .unwrap_or(0);
+
+            let swap_free_line = all_lines_iter
+                .find(|&item| item.starts_with("SwapFree"))
+                .expect("Unable to read free swap memory.");
+            let swap_free = swap_free_line
+                .split(":")
+                .collect::<Vec<_>>()
+                .get(1)
+                .expect("Unable to parse free swap memory.")
+                .trim()
+                .split(" ")
+                .nth(0)
+                .unwrap_or("0")
+                .trim()
+                .parse()
+                .unwrap_or(0);
 
             Ok(MemoryInfo {
                 total_mem: total_mem as usize,
                 available_mem: available_mem as usize,
                 used_mem: (total_mem - available_mem) as usize,
-                free_mem: 0 as usize,
+                total_swap: total_swap as usize,
+                used_swap: (total_swap - swap_free) as usize,
             })
         }
     }
