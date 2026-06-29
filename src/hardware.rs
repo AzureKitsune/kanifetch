@@ -17,6 +17,7 @@ impl CPUVendor {
     }
 }
 
+#[allow(unused)]
 pub struct CPUInfo {
     pub cpu_name: String,
     pub core_count: i32,
@@ -24,8 +25,10 @@ pub struct CPUInfo {
     pub vendor: CPUVendor,
     pub is_smt_enabled: bool,
     pub is_turbo_boost_enabled: bool,
+    pub igpu_name: Option<String>,
 }
 
+#[allow(unused)]
 pub struct MemoryInfo {
     pub total_mem: usize,
     // pub free_mem: usize,
@@ -37,16 +40,15 @@ pub struct MemoryInfo {
 }
 
 pub struct HardwareInfo {
-    pub cpu_name: String, // TODO account for multiple cpus
-    pub is_cpu_smt_enabled: bool,
-    pub is_turbo_boost_enabled: bool,
-    pub integrated_gpu_name: Option<String>,
+    pub cpu_info: CPUInfo, // TODO account for multiple cpus
     pub discrete_gpu_names: Option<Vec<String>>,
     pub memory_info: MemoryInfo,
 }
 
 pub fn get_cpu() -> CPUInfo {
     let cpu_info = std::fs::read_to_string("/proc/cpuinfo");
+    let mut igpu_name: Option<String> = None;
+    let mut formatted_cpu_name = String::new();
     let (cpu_name, core_count, thread_count, vendor) = match cpu_info {
         Err(_e) => ("N/A".to_string(), -1, -1, CPUVendor::Unknown),
         Ok(contents) => {
@@ -121,40 +123,25 @@ pub fn get_cpu() -> CPUInfo {
             Ok(contents) => contents.trim() == "1",
         };
 
-    return CPUInfo {
-        cpu_name,
-        core_count,
-        thread_count,
-        vendor,
-        is_smt_enabled,
-        is_turbo_boost_enabled,
-    };
-}
+    let mut formatted_cpu_name = cpu_name.clone();
 
-pub fn get_hardware_info() -> HardwareInfo {
-    let full_cpu_info = get_cpu();
-    let mut cpu_name = String::from(full_cpu_info.cpu_name.clone());
-    let mut igpu_name: Option<String> = None;
-
-    match full_cpu_info.vendor {
+    // TODO handle Intel, Nvidia and other CPUs
+    match vendor {
         CPUVendor::AMD => {
-            if full_cpu_info.cpu_name.contains("w/ Radeon") {
+            if cpu_name.contains("w/ Radeon") {
                 // Ryzen iGPU
 
-                let name_split = full_cpu_info
-                    .cpu_name
-                    .split("w/ Radeon")
-                    .collect::<Vec<_>>();
+                let name_split = cpu_name.split("w/ Radeon").collect::<Vec<_>>();
 
-                cpu_name = format!(
+                formatted_cpu_name = format!(
                     "{} ({} cores / {} threads)",
                     name_split
                         .get(0)
                         .expect("Unable to parse cpu name.")
                         .trim()
                         .to_string(),
-                    full_cpu_info.core_count,
-                    full_cpu_info.thread_count
+                    core_count,
+                    thread_count
                 );
                 igpu_name = Some(format!(
                     "AMD Radeon {}",
@@ -165,9 +152,9 @@ pub fn get_hardware_info() -> HardwareInfo {
                         .to_string()
                 ));
             } else {
-                cpu_name = format!(
+                formatted_cpu_name = format!(
                     "{} ({} cores / {} threads)",
-                    full_cpu_info.cpu_name, full_cpu_info.core_count, full_cpu_info.thread_count
+                    cpu_name, core_count, thread_count
                 );
             }
         }
@@ -177,16 +164,29 @@ pub fn get_hardware_info() -> HardwareInfo {
         _ => {}
     }
 
-    // TODO handle Intel, Nvidia and other CPUs
+    return CPUInfo {
+        cpu_name: formatted_cpu_name,
+        core_count,
+        thread_count,
+        vendor,
+        igpu_name,
+        is_smt_enabled,
+        is_turbo_boost_enabled,
+    };
+}
+
+pub fn get_hardware_info() -> HardwareInfo {
+    let full_cpu_info = get_cpu();
 
     let mut discrete_gpus = get_discrete_gpus();
-    if igpu_name != None {
+    if full_cpu_info.igpu_name != None {
         // Removes igpu from discrete gpu list
         let full_igpu_name = discrete_gpus
             .iter()
             .find(|&item| {
                 item.contains(
-                    igpu_name
+                    full_cpu_info
+                        .igpu_name
                         .clone()
                         .expect("Unable to get igpu name.")
                         .as_str(),
@@ -203,10 +203,7 @@ pub fn get_hardware_info() -> HardwareInfo {
     let mem_info = get_memory().expect("Unable to gather memory information.");
 
     HardwareInfo {
-        cpu_name,
-        is_cpu_smt_enabled: full_cpu_info.is_smt_enabled,
-        is_turbo_boost_enabled: full_cpu_info.is_turbo_boost_enabled,
-        integrated_gpu_name: igpu_name,
+        cpu_info: full_cpu_info,
         discrete_gpu_names: Some(discrete_gpus),
         memory_info: mem_info,
     }

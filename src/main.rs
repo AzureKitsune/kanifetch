@@ -74,7 +74,7 @@ fn main() {
 
     print_cpu_info(&hardware_info);
 
-    if let Some(igpu_name) = hardware_info.integrated_gpu_name {
+    if let Some(igpu_name) = hardware_info.cpu_info.igpu_name {
         colors::print_color(TerminalColors::BoldBlue, "GPU: ");
         colors::print_color(TerminalColors::White, igpu_name);
         colors::println_color(TerminalColors::BoldCyan, " [Integrated]");
@@ -128,15 +128,18 @@ fn print_memory_info(memory_info: MemoryInfo) {
 
 fn print_cpu_info(hardware_info: &HardwareInfo) {
     colors::print_color(TerminalColors::BoldRed, "CPU: ");
-    colors::print_color(TerminalColors::White, hardware_info.cpu_name.clone());
+    colors::print_color(
+        TerminalColors::White,
+        hardware_info.cpu_info.cpu_name.clone(),
+    );
 
-    if hardware_info.is_cpu_smt_enabled {
+    if hardware_info.cpu_info.is_smt_enabled {
         colors::print_color(TerminalColors::BoldGreen, " [+SMT]");
     } else {
         colors::print_color(TerminalColors::BoldRed, " [-SMT]");
     }
 
-    if hardware_info.is_turbo_boost_enabled {
+    if hardware_info.cpu_info.is_turbo_boost_enabled {
         colors::print_color(TerminalColors::BoldGreen, " [+Turbo]");
     } else {
         colors::print_color(TerminalColors::BoldRed, " [-Turbo]");
