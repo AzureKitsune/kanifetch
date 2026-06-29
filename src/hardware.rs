@@ -26,12 +26,20 @@ pub struct CPUInfo {
     pub is_turbo_boost_enabled: bool,
 }
 
+pub struct MemoryInfo {
+    pub total_mem: usize,
+    pub free_mem: usize,
+    pub available_mem: usize,
+    pub used_mem: usize,
+}
+
 pub struct HardwareInfo {
     pub cpu_name: String, // TODO account for multiple cpus
     pub is_cpu_smt_enabled: bool,
     pub is_turbo_boost_enabled: bool,
     pub integrated_gpu_name: Option<String>,
     pub discrete_gpu_names: Option<Vec<String>>,
+    pub memory_info: MemoryInfo,
 }
 
 pub fn get_cpu() -> CPUInfo {
@@ -189,12 +197,15 @@ pub fn get_hardware_info() -> HardwareInfo {
             .collect();
     }
 
+    let mem_info = get_memory().expect("Unable to gather memory information.");
+
     HardwareInfo {
         cpu_name,
         is_cpu_smt_enabled: full_cpu_info.is_smt_enabled,
         is_turbo_boost_enabled: full_cpu_info.is_turbo_boost_enabled,
         integrated_gpu_name: igpu_name,
         discrete_gpu_names: Some(discrete_gpus),
+        memory_info: mem_info,
     }
 }
 
@@ -247,4 +258,55 @@ pub fn get_discrete_gpus() -> Vec<String> {
     }
 
     return detected_gpus;
+}
+
+pub fn get_memory() -> Result<MemoryInfo, &'static str> {
+    let mem_info = std::fs::read_to_string("/proc/meminfo");
+
+    match mem_info {
+        Err(_) => Err("Unable to retrieve memory information."),
+        Ok(contents) => {
+            let all_lines: Vec<_> = contents.split_terminator("\n").collect();
+            let mut all_lines_iter = all_lines.iter();
+
+            let total_mem_line = all_lines_iter
+                .find(|&item| item.starts_with("MemTotal"))
+                .expect("Unable to read total memory.");
+            let total_mem = total_mem_line
+                .split(":")
+                .collect::<Vec<_>>()
+                .get(1)
+                .expect("Unable to parse total memory.")
+                .trim()
+                .split(" ")
+                .nth(0)
+                .unwrap_or("-1")
+                .trim()
+                .parse()
+                .unwrap_or(-1);
+
+            let available_mem_line = all_lines_iter
+                .find(|&item| item.starts_with("MemAvailable"))
+                .expect("Unable to read available memory.");
+            let available_mem = available_mem_line
+                .split(":")
+                .collect::<Vec<_>>()
+                .get(1)
+                .expect("Unable to parse available memory.")
+                .trim()
+                .split(" ")
+                .nth(0)
+                .unwrap_or("-1")
+                .trim()
+                .parse()
+                .unwrap_or(-1);
+
+            Ok(MemoryInfo {
+                total_mem: total_mem as usize,
+                available_mem: available_mem as usize,
+                used_mem: (total_mem - available_mem) as usize,
+                free_mem: 0 as usize,
+            })
+        }
+    }
 }

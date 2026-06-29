@@ -9,7 +9,7 @@ use colors::TerminalColors;
 use hardware::get_hardware_info;
 use shell::get_shell;
 
-use crate::hardware::HardwareInfo;
+use crate::hardware::{HardwareInfo, MemoryInfo};
 fn main() {
     let os_name = read_os_name();
     let kernel = read_kernel();
@@ -87,6 +87,34 @@ fn main() {
             colors::println_color(TerminalColors::BoldCyan, " [Discrete]");
         }
     }
+
+    print_memory_info(hardware_info.memory_info);
+}
+
+fn format_memory_amount(memory: usize) -> String {
+    if memory >= 10000000 {
+        // Gibibytes
+        return format!("{} GiB", memory / 1024 / 1024);
+    } else if memory >= 1000 {
+        // Mebibytes
+        return format!("{} MiB", memory / 1024);
+    } else {
+        // Kibibytes
+        return format!("{} KiB", memory);
+    }
+}
+
+fn print_memory_info(memory_info: MemoryInfo) {
+    colors::print_color(TerminalColors::BoldGreen, "Memory: ");
+
+    let formatted_available_mem = format_memory_amount(memory_info.available_mem);
+    let formatted_used_mem = format_memory_amount(memory_info.used_mem);
+    let formatted_total_mem = format_memory_amount(memory_info.total_mem);
+
+    colors::println_color(
+        TerminalColors::White,
+        format!("{} / {}", formatted_used_mem, formatted_total_mem),
+    );
 }
 
 fn print_cpu_info(hardware_info: &HardwareInfo) {
