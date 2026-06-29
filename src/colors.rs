@@ -56,10 +56,10 @@ impl fmt::Display for TerminalColors {
 }
 
 // std::fmt::Display means its convertable to a string?
-pub fn print_color<T: std::fmt::Display>(color: TerminalColors, msg: T) {
+pub fn print_color<T: std::fmt::Display>(color: &TerminalColors, msg: T) {
     print!("{}{}", color.as_str(), msg);
 }
 
-pub fn println_color<T: std::fmt::Display>(color: TerminalColors, msg: T) {
+pub fn println_color<T: std::fmt::Display>(color: &TerminalColors, msg: T) {
     print_color(color, format!("{}\n", msg));
 }

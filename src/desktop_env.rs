@@ -34,13 +34,20 @@ pub fn get_desktop_env() -> DesktopEnv {
     let session_type: String =
         std::env::var("XDG_SESSION_TYPE").expect("Unable to get graphical session type.");
 
-    let current_session: String =
-        std::env::var("XDG_CURRENT_DESKTOP").expect("Unable to get desktop type.");
+    let current_session: String = match std::env::var("XDG_CURRENT_DESKTOP")
+        .expect("Unable to get desktop type.")
+        .to_lowercase()
+        .as_str()
+    {
+        "kde" => "KDE Plasma".to_string(),
+        "gnome" => "Gnome".to_string(),
+        _ => "Unknown".to_string(),
+    };
 
     let mut desktop_env_version: String = String::new();
 
-    let (window_manager, window_manager_ver) = match current_session.to_lowercase().trim() {
-        "kde" => {
+    let (window_manager, window_manager_ver) = match current_session.as_str() {
+        "KDE Plasma" => {
             let kwin_ver = String::from_utf8(
                 std::process::Command::new("kwin")
                     .arg("--version")
@@ -58,7 +65,7 @@ pub fn get_desktop_env() -> DesktopEnv {
             desktop_env_version = kwin_ver.to_string();
             ("kwin", kwin_ver)
         }
-        "gnome" => {
+        "Gnome" => {
             // untested
             let mutter_ver = String::from_utf8(
                 std::process::Command::new("gnome-shell")

@@ -9,7 +9,7 @@ use colors::TerminalColors;
 use hardware::get_hardware_info;
 use shell::get_shell;
 
-use crate::hardware::{HardwareInfo, MemoryInfo};
+use crate::hardware::{CPUInfo, GPUInfo, HardwareInfo, MemoryInfo};
 fn main() {
     let os_name = read_os_name();
     let kernel = read_kernel();
@@ -25,70 +25,56 @@ fn main() {
 
     print_header();
 
-    colors::print_color(TerminalColors::BoldGreen, "OS Name: ");
-    colors::println_color(TerminalColors::White, os_name);
+    colors::print_color(&TerminalColors::BoldGreen, "OS: ");
+    colors::println_color(&TerminalColors::White, os_name);
 
-    colors::print_color(TerminalColors::BoldRed, "Kernel: ");
-    colors::println_color(TerminalColors::White, kernel);
+    colors::print_color(&TerminalColors::BoldRed, "Kernel: ");
+    colors::println_color(&TerminalColors::White, kernel);
 
-    colors::print_color(TerminalColors::BoldCyan, "Uptime: ");
-    colors::println_color(TerminalColors::White, uptime);
+    colors::print_color(&TerminalColors::BoldCyan, "Uptime: ");
+    colors::println_color(&TerminalColors::White, uptime);
 
-    colors::print_color(TerminalColors::BoldBlue, "Shell: ");
-    colors::println_color(TerminalColors::White, shell_name);
+    colors::print_color(&TerminalColors::BoldBlue, "Shell: ");
+    colors::println_color(&TerminalColors::White, shell_name);
 
-    colors::print_color(TerminalColors::BoldRed, "Terminal: ");
-    colors::println_color(TerminalColors::White, terminal);
+    colors::print_color(&TerminalColors::BoldRed, "Terminal: ");
+    colors::println_color(&TerminalColors::White, terminal);
 
     print_package_info(&wrapped_pkg_info, &wrapped_flatpak_info, &wrapped_snap_info);
 
-    colors::print_color(TerminalColors::BoldPurple, "Session: ");
-    colors::println_color(TerminalColors::White, desktop_env.session_type.as_str());
-
-    colors::print_color(TerminalColors::BoldGreen, "DE: ");
+    colors::print_color(&TerminalColors::BoldGreen, "DE: ");
     colors::println_color(
-        TerminalColors::White,
+        &TerminalColors::White,
         format!(
             "{} ({})",
             desktop_env.desktop_env, desktop_env.desktop_env_version
         ),
     );
-    colors::print_color(TerminalColors::BoldPurple, "WM: ");
+    colors::print_color(&TerminalColors::BoldCyan, "WM: ");
     colors::println_color(
-        TerminalColors::White,
+        &TerminalColors::White,
         format!(
-            "{} ({})",
-            desktop_env.window_manager, desktop_env.window_manager_version
+            "{} ({}) [{}]",
+            desktop_env.window_manager,
+            desktop_env.window_manager_version,
+            desktop_env.session_type.as_str()
         ),
     );
 
     match net_info {
         Ok(item) => {
             colors::print_color(
-                TerminalColors::BoldPurple,
+                &TerminalColors::BoldPurple,
                 format!("NET ({}/{}): ", item.name, item.address_type),
             );
-            colors::println_color(TerminalColors::White, item.address);
+            colors::println_color(&TerminalColors::White, item.address);
         }
         Err(_) => {}
     }
 
-    print_cpu_info(&hardware_info);
+    print_cpu_info(&hardware_info.cpu_info);
 
-    if let Some(gpus) = hardware_info.gpus_info {
-        for gpu in gpus {
-            colors::print_color(TerminalColors::BoldBlue, "GPU: ");
-            colors::print_color(TerminalColors::White, gpu.gpu_name); // TODO maybe color code gpu names by vendor name
-            colors::println_color(
-                TerminalColors::BoldCyan,
-                if gpu.is_discrete {
-                    " [Discrete]"
-                } else {
-                    " [Integrated]"
-                },
-            );
-        }
-    }
+    print_gpu_info(&hardware_info.gpus_info);
 
     print_memory_info(hardware_info.memory_info);
 }
@@ -107,44 +93,93 @@ fn format_memory_amount(memory: usize) -> String {
 }
 
 fn print_memory_info(memory_info: MemoryInfo) {
-    colors::print_color(TerminalColors::BoldGreen, "Memory: ");
+    colors::print_color(&TerminalColors::BoldBlue, "Memory: ");
 
     let formatted_used_mem = format_memory_amount(memory_info.used_mem);
     let formatted_total_mem = format_memory_amount(memory_info.total_mem);
 
     colors::println_color(
-        TerminalColors::White,
+        &TerminalColors::White,
         format!("{} / {}", formatted_used_mem, formatted_total_mem),
     );
 
-    colors::print_color(TerminalColors::BoldRed, "Swap: ");
+    colors::print_color(&TerminalColors::BoldRed, "Swap: ");
 
     let formatted_used_swap = format_memory_amount(memory_info.used_swap);
     let formatted_total_swap = format_memory_amount(memory_info.total_swap);
 
     colors::println_color(
-        TerminalColors::White,
+        &TerminalColors::White,
         format!("{} / {}", formatted_used_swap, formatted_total_swap),
     );
 }
 
-fn print_cpu_info(hardware_info: &HardwareInfo) {
-    colors::print_color(TerminalColors::BoldRed, "CPU: ");
-    colors::print_color(
-        TerminalColors::White,
-        hardware_info.cpu_info.cpu_name.clone(),
+fn print_gpu_info(gpus_info: &Option<Vec<GPUInfo>>) {
+    if let Some(gpus) = &gpus_info {
+        for gpu in gpus {
+            let gpu_name = &gpu.gpu_name;
+            let vendor_color = match gpu.gpu_vendor {
+                hardware::GPUVendor::AMD => &TerminalColors::BoldRed,
+                hardware::GPUVendor::Intel => &TerminalColors::BoldBlue,
+                hardware::GPUVendor::Nvidia => &TerminalColors::BoldGreen,
+                _ => &TerminalColors::White,
+            };
+
+            let colorized_gpu_name = gpu_name.replace(
+                gpu_name,
+                &format!(
+                    "{}{}",
+                    &vendor_color.as_str().to_string(),
+                    gpu_name.as_str()
+                ),
+            );
+
+            colors::print_color(&TerminalColors::BoldPurple, "GPU: ");
+            colors::print_color(&TerminalColors::White, colorized_gpu_name);
+            colors::println_color(
+                &TerminalColors::BoldCyan,
+                if gpu.is_discrete {
+                    " [Discrete]"
+                } else {
+                    " [Integrated]"
+                },
+            );
+        }
+    }
+}
+
+fn print_cpu_info(cpu_info: &CPUInfo) {
+    let cpu_name = cpu_info.cpu_name.clone();
+    colors::print_color(&TerminalColors::BoldCyan, "CPU: ");
+
+    let vendor_color = match cpu_info.vendor {
+        hardware::CPUVendor::AMD => &TerminalColors::BoldRed,
+        hardware::CPUVendor::Intel => &TerminalColors::BoldBlue,
+        hardware::CPUVendor::Nvidia => &TerminalColors::BoldGreen,
+        _ => &TerminalColors::White,
+    };
+
+    let colorized_cpu_name = cpu_name.replace(
+        &cpu_name,
+        &format!(
+            "{}{}",
+            &vendor_color.as_str().to_string(),
+            cpu_name.as_str()
+        ),
     );
 
-    if hardware_info.cpu_info.is_smt_enabled {
-        colors::print_color(TerminalColors::BoldGreen, " [+SMT]");
+    colors::print_color(&TerminalColors::White, colorized_cpu_name);
+
+    if cpu_info.is_smt_enabled {
+        colors::print_color(&TerminalColors::BoldGreen, " [+SMT]");
     } else {
-        colors::print_color(TerminalColors::BoldRed, " [-SMT]");
+        colors::print_color(&TerminalColors::BoldRed, " [-SMT]");
     }
 
-    if hardware_info.cpu_info.is_turbo_boost_enabled {
-        colors::print_color(TerminalColors::BoldGreen, " [+Turbo]");
+    if cpu_info.is_turbo_boost_enabled {
+        colors::print_color(&TerminalColors::BoldGreen, " [+Turbo]");
     } else {
-        colors::print_color(TerminalColors::BoldRed, " [-Turbo]");
+        colors::print_color(&TerminalColors::BoldRed, " [-Turbo]");
     }
 
     println!("");
@@ -166,29 +201,29 @@ fn print_package_info(
             Err(_) => &0,
         };
 
-        colors::print_color(TerminalColors::BoldBlue, "Packages: ");
-        colors::print_color(TerminalColors::BoldPurple, pkg_info.pkg_mgr_name.clone());
+        colors::print_color(&TerminalColors::BoldBlue, "Packages: ");
+        colors::print_color(&TerminalColors::BoldPurple, pkg_info.pkg_mgr_name.clone());
         colors::print_color(
-            TerminalColors::White,
+            &TerminalColors::White,
             format!(" ({} packages)", pkg_info.pkg_count),
         );
 
         if flatpak_pkg_count > &0 {
             print!(", ");
-            colors::print_color(TerminalColors::BoldCyan, "flatpak");
+            colors::print_color(&TerminalColors::BoldCyan, "flatpak");
 
             colors::print_color(
-                TerminalColors::White,
+                &TerminalColors::White,
                 format!(" ({} flatpaks)", flatpak_pkg_count),
             );
         }
 
         if snap_pkg_count > &0 {
             print!(", ");
-            colors::print_color(TerminalColors::BoldCyan, "snap");
+            colors::print_color(&TerminalColors::BoldCyan, "snap");
 
             colors::print_color(
-                TerminalColors::White,
+                &TerminalColors::White,
                 format!(" ({} snaps)", snap_pkg_count),
             );
         }
@@ -211,8 +246,8 @@ fn print_header() {
     let header = format!("{}@{}", user, read_host_name());
     let header_sep = make_separator(header.len());
 
-    colors::println_color(TerminalColors::BoldBlue, header);
-    colors::println_color(TerminalColors::White, header_sep);
+    colors::println_color(&TerminalColors::BoldBlue, header);
+    colors::println_color(&TerminalColors::White, header_sep);
 }
 
 fn read_host_name() -> String {
