@@ -1,4 +1,36 @@
+use regex::Regex;
+use which::which;
+
+#[cfg(test)]
+#[path = "hardware_tests.rs"]
+mod tests;
+
+#[cfg(not(test))]
+fn fetch_cpu_info() -> Result<String, std::io::Error> {
+    return std::fs::read_to_string("/proc/cpuinfo");
+}
+
+#[cfg(test)]
+use tests::mock_fetch_cpu_info as fetch_cpu_info;
+
+#[cfg(not(test))]
+fn fetch_smt_info() -> Result<String, std::io::Error> {
+    return std::fs::read_to_string("/sys/devices/system/cpu/smt/active");
+}
+
+#[cfg(test)]
+use tests::mock_fetch_smt_info as fetch_smt_info;
+
+#[cfg(not(test))]
+fn fetch_cpu_boost() -> Result<String, std::io::Error> {
+    return std::fs::read_to_string("/sys/devices/system/cpu/cpufreq/boost");
+}
+
+#[cfg(test)]
+use tests::mock_fetch_cpu_boost as fetch_cpu_boost;
+
 #[allow(unused)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum CPUVendor {
     AMD,
     Intel,
@@ -18,6 +50,7 @@ impl CPUVendor {
 }
 
 #[allow(unused)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct CPUInfo {
     pub cpu_name: String,
     pub core_count: i32,
@@ -25,7 +58,6 @@ pub struct CPUInfo {
     pub vendor: CPUVendor,
     pub is_smt_enabled: bool,
     pub is_turbo_boost_enabled: bool,
-    pub igpu_name: Option<String>,
 }
 
 #[allow(unused)]
@@ -39,15 +71,40 @@ pub struct MemoryInfo {
     pub used_swap: usize,
 }
 
+pub enum GPUVendor {
+    AMD,
+    Intel,
+    Nvidia,
+    Qualcomm,
+    Unknown,
+}
+
+impl GPUVendor {
+    pub fn from_str(value: &str) -> GPUVendor {
+        match value {
+            "AMD" => GPUVendor::AMD,
+            "Intel" => GPUVendor::Intel,
+            "Nvidia" => GPUVendor::Nvidia,
+            _ => GPUVendor::Unknown,
+        }
+    }
+}
+
+#[allow(unused)]
+pub struct GPUInfo {
+    pub gpu_name: String,
+    pub gpu_vendor: GPUVendor,
+    pub is_discrete: bool,
+}
+
 pub struct HardwareInfo {
     pub cpu_info: CPUInfo, // TODO account for multiple cpus
-    pub discrete_gpu_names: Option<Vec<String>>,
+    pub gpus_info: Option<Vec<GPUInfo>>,
     pub memory_info: MemoryInfo,
 }
 
 pub fn get_cpu() -> CPUInfo {
-    let cpu_info = std::fs::read_to_string("/proc/cpuinfo");
-    let mut igpu_name: Option<String> = None;
+    let cpu_info = fetch_cpu_info();
 
     let (cpu_name, core_count, thread_count, vendor) = match cpu_info {
         Err(_e) => ("N/A".to_string(), -1, -1, CPUVendor::Unknown),
@@ -59,7 +116,11 @@ pub fn get_cpu() -> CPUInfo {
                 ("N/A".to_string(), -1, -1, CPUVendor::Unknown);
             }
 
-            let mut lines: Vec<_> = first_proc.unwrap().split_terminator("\n").collect();
+            let lines: Vec<_> = first_proc
+                .unwrap()
+                .split_terminator("\n")
+                .map(|line| line.trim())
+                .collect();
             let cpu_name_line = lines.iter().find(|&item| item.starts_with("model name"));
             let cpu_name = match cpu_name_line {
                 Some(val) => val
@@ -111,17 +172,16 @@ pub fn get_cpu() -> CPUInfo {
     };
 
     // https://unix.stackexchange.com/a/522295
-    let is_smt_enabled = match std::fs::read_to_string("/sys/devices/system/cpu/smt/active") {
+    let is_smt_enabled = match fetch_smt_info() {
         Err(_e) => false, // Assume false on error. TODO handle this better
         Ok(contents) => contents.trim() == "1",
     }; // this could be inferred from core_count == thread_count
 
     // https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
-    let is_turbo_boost_enabled =
-        match std::fs::read_to_string("/sys/devices/system/cpu/cpufreq/boost") {
-            Err(_) => false, // Assume false
-            Ok(contents) => contents.trim() == "1",
-        };
+    let is_turbo_boost_enabled = match fetch_cpu_boost() {
+        Err(_) => false, // Assume false
+        Ok(contents) => contents.trim() == "1",
+    };
 
     let mut formatted_cpu_name = cpu_name.clone();
 
@@ -129,9 +189,9 @@ pub fn get_cpu() -> CPUInfo {
     match vendor {
         CPUVendor::AMD => {
             if cpu_name.contains("w/ Radeon") {
-                // Ryzen iGPU
+                // Handle Ryzen iGPU
 
-                let name_split = cpu_name.split("w/ Radeon").collect::<Vec<_>>();
+                let name_split = cpu_name.split("w/ Radeon").collect::<Vec<_>>(); // Strips igpu name out
 
                 formatted_cpu_name = format!(
                     "{} ({} cores / {} threads)",
@@ -143,14 +203,6 @@ pub fn get_cpu() -> CPUInfo {
                     core_count,
                     thread_count
                 );
-                igpu_name = Some(format!(
-                    "AMD Radeon {}",
-                    name_split
-                        .get(1)
-                        .expect("Unable to parse igpu name.")
-                        .trim()
-                        .to_string()
-                ));
             } else {
                 formatted_cpu_name = format!(
                     "{} ({} cores / {} threads)",
@@ -169,7 +221,6 @@ pub fn get_cpu() -> CPUInfo {
         core_count,
         thread_count,
         vendor,
-        igpu_name,
         is_smt_enabled,
         is_turbo_boost_enabled,
     };
@@ -178,38 +229,38 @@ pub fn get_cpu() -> CPUInfo {
 pub fn get_hardware_info() -> HardwareInfo {
     let full_cpu_info = get_cpu();
 
-    let mut discrete_gpus = get_discrete_gpus();
-    if full_cpu_info.igpu_name != None {
-        // Removes igpu from discrete gpu list
-        let full_igpu_name = discrete_gpus
-            .iter()
-            .find(|&item| {
-                item.contains(
-                    full_cpu_info
-                        .igpu_name
-                        .clone()
-                        .expect("Unable to get igpu name.")
-                        .as_str(),
-                )
-            })
-            .expect("Unable to get igpu name.");
-        discrete_gpus = discrete_gpus
-            .iter()
-            .filter(|&item| item != full_igpu_name)
-            .map(|item| item.to_string())
-            .collect();
-    }
+    let mut all_gpus = get_gpus();
+    // if full_cpu_info.igpu_name != None {
+    //     // Removes igpu from discrete gpu list
+    //     let full_igpu_name = all_gpus
+    //         .iter()
+    //         .find(|&item| {
+    //             item.contains(
+    //                 full_cpu_info
+    //                     .igpu_name
+    //                     .clone()
+    //                     .expect("Unable to get igpu name.")
+    //                     .as_str(),
+    //             )
+    //         })
+    //         .expect("Unable to get igpu name.");
+    //     all_gpus = all_gpus
+    //         .iter()
+    //         .filter(|&item| item != full_igpu_name)
+    //         .map(|item| item.to_string())
+    //         .collect();
+    // }
 
     let mem_info = get_memory().expect("Unable to gather memory information.");
 
     HardwareInfo {
         cpu_info: full_cpu_info,
-        discrete_gpu_names: Some(discrete_gpus),
+        gpus_info: Some(all_gpus),
         memory_info: mem_info,
     }
 }
 
-pub fn get_discrete_gpus() -> Vec<String> {
+pub fn get_gpus() -> Vec<GPUInfo> {
     let mut detected_gpus = Vec::new();
     if std::path::Path::new("/proc/driver/nvidia/gpus/*/information").exists() {
         // handle Nvidia dGPUs
@@ -229,33 +280,92 @@ pub fn get_discrete_gpus() -> Vec<String> {
                         .trim()
                         .to_string();
 
-                    detected_gpus.push(gpu_name);
+                    detected_gpus.push(GPUInfo {
+                        gpu_name: gpu_name,
+                        gpu_vendor: GPUVendor::Nvidia,
+                        is_discrete: false, // TODO handle future nvidia igpus
+                    });
                 }
             }
         }
     }
 
-    // detect AMD and Intel dGPUs via mesa
-    let glxinfo_output = String::from_utf8(
-        std::process::Command::new("glxinfo")
-            .arg("-B")
-            .output()
-            .expect("Unable to get opengl info.")
-            .stdout,
-    )
-    .expect("Unable to parse opengl info output.");
-    let opengl_renders = glxinfo_output
-        .split_terminator('\n')
-        .filter(|&item| item.starts_with("OpenGL renderer string:") && !item.contains("Nvidia"))
-        .map(|item| {
-            item.split(":")
-                .last()
-                .expect("Unable to parse opengl render info.")
-                .trim()
-        });
+    // detect AMD and Intel (d/i)GPUs via mesa. TODO handle llvmpipe (aka cpu/software rendering)
+    if which("glxinfo").is_ok() {
+        let glxinfo_output = String::from_utf8(
+            std::process::Command::new("glxinfo")
+                .arg("-B")
+                .output()
+                .expect("Unable to get opengl info.")
+                .stdout,
+        )
+        .expect("Unable to parse opengl info output.");
 
-    for gpu in opengl_renders {
-        detected_gpus.push(gpu.to_string());
+        let render_block_re = Regex::new(r"(?mus)^Extended renderer info.+?Memory info");
+        let re_iter = render_block_re.unwrap();
+        let matches = re_iter.find_iter(&glxinfo_output);
+
+        for block_match in matches {
+            let result = block_match.as_str();
+
+            // TODO use regex capture groups
+
+            let all_lines: Vec<_> = result.split_terminator("\n").collect();
+            let mut all_lines_iter = all_lines.iter();
+
+            let device_line = all_lines_iter
+                .find(|&item| item.trim().starts_with("Device"))
+                .expect("Unable to read device name.");
+            let device_name = device_line
+                .trim()
+                .split(":")
+                .collect::<Vec<_>>()
+                .get(1)
+                .expect("Unable to parse device name.")
+                .trim();
+
+            let video_mem_line = all_lines_iter
+                .find(|&item| item.trim().starts_with("Video memory"))
+                .expect("Unable to read video memory.");
+            let _video_mem = video_mem_line
+                .trim()
+                .split(":")
+                .collect::<Vec<_>>()
+                .get(1)
+                .expect("Unable to parse video memory.")
+                .trim()
+                .split(" ")
+                .nth(0)
+                .unwrap_or("N/A")
+                .trim();
+
+            let unified_mem_line = all_lines_iter
+                .find(|&item| item.trim().starts_with("Unified memory"))
+                .expect("Unable to read unified memory.");
+            let unified_mem = unified_mem_line
+                .trim()
+                .split(":")
+                .collect::<Vec<_>>()
+                .get(1)
+                .expect("Unable to parse unified memory.")
+                .trim()
+                .split(" ")
+                .nth(0)
+                .unwrap_or("N/A")
+                .trim();
+
+            let is_discrete = match unified_mem {
+                // Assume unified memory = integrated gpu
+                "yes" => false,
+                _ => true,
+            };
+
+            detected_gpus.push(GPUInfo {
+                gpu_name: device_name.to_string(),
+                gpu_vendor: GPUVendor::from_str(device_name.split(" ").nth(0).unwrap()),
+                is_discrete: is_discrete,
+            });
+        }
     }
 
     return detected_gpus;

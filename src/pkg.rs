@@ -1,5 +1,9 @@
 use which::which;
 
+#[cfg(test)]
+#[path = "pkg_tests.rs"]
+mod tests;
+
 pub struct SystemPackageStats {
     pub pkg_mgr_name: String,
     pub pkg_count: usize,

@@ -75,17 +75,18 @@ fn main() {
 
     print_cpu_info(&hardware_info);
 
-    if let Some(igpu_name) = hardware_info.cpu_info.igpu_name {
-        colors::print_color(TerminalColors::BoldBlue, "GPU: ");
-        colors::print_color(TerminalColors::White, igpu_name);
-        colors::println_color(TerminalColors::BoldCyan, " [Integrated]");
-    }
-
-    if let Some(dgpu_names) = hardware_info.discrete_gpu_names {
-        for dgpu_name in dgpu_names {
+    if let Some(gpus) = hardware_info.gpus_info {
+        for gpu in gpus {
             colors::print_color(TerminalColors::BoldBlue, "GPU: ");
-            colors::print_color(TerminalColors::White, dgpu_name); // TODO maybe color code gpu names by vendor name
-            colors::println_color(TerminalColors::BoldCyan, " [Discrete]");
+            colors::print_color(TerminalColors::White, gpu.gpu_name); // TODO maybe color code gpu names by vendor name
+            colors::println_color(
+                TerminalColors::BoldCyan,
+                if gpu.is_discrete {
+                    " [Discrete]"
+                } else {
+                    " [Integrated]"
+                },
+            );
         }
     }
 
