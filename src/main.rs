@@ -39,21 +39,7 @@ fn main() {
     colors::print_color(TerminalColors::BoldRed, "Terminal: ");
     colors::println_color(TerminalColors::White, terminal);
 
-    if let Ok(pkg_info) = wrapped_pkg_info {
-        let flatpak_pkg_count = match wrapped_flatpak_info {
-            Ok(flatpak_pkg_count) => flatpak_pkg_count,
-            Err(_) => 0,
-        };
-
-        colors::print_color(TerminalColors::BoldBlue, "Package Manager: ");
-        colors::println_color(
-            TerminalColors::White,
-            format!(
-                "{} ({} packages), flatpak ({} flatpaks)",
-                pkg_info.pkg_mgr_name, pkg_info.pkg_count, flatpak_pkg_count
-            ),
-        );
-    }
+    print_package_info(&wrapped_pkg_info, &wrapped_flatpak_info);
 
     colors::print_color(TerminalColors::BoldPurple, "Session: ");
     colors::println_color(TerminalColors::White, desktop_env.session_type.as_str());
@@ -120,6 +106,37 @@ fn print_cpu_info(hardware_info: &HardwareInfo) {
     }
 
     println!("");
+}
+
+fn print_package_info(
+    wrapped_pkg_info: &Result<pkg::SystemPackageStats, String>,
+    wrapped_flatpak_info: &Result<usize, &str>,
+) {
+    if let Ok(pkg_info) = wrapped_pkg_info {
+        let flatpak_pkg_count = match wrapped_flatpak_info {
+            Ok(flatpak_pkg_count) => flatpak_pkg_count,
+            Err(_) => &0,
+        };
+
+        colors::print_color(TerminalColors::BoldBlue, "Package Manager: ");
+        colors::print_color(TerminalColors::BoldPurple, pkg_info.pkg_mgr_name.clone());
+        colors::print_color(
+            TerminalColors::White,
+            format!(" ({} packages)", pkg_info.pkg_count),
+        );
+
+        if flatpak_pkg_count > &0 {
+            print!(", ");
+            colors::print_color(TerminalColors::BoldCyan, "flatpak");
+
+            colors::print_color(
+                TerminalColors::White,
+                format!(" ({} flatpaks)", flatpak_pkg_count),
+            );
+        }
+
+        println!("");
+    }
 }
 
 fn make_separator(length: usize) -> String {
