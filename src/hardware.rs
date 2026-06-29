@@ -59,8 +59,8 @@ pub fn get_cpu() -> CPUInfo {
                 ("N/A".to_string(), -1, -1, CPUVendor::Unknown);
             }
 
-            let mut lines = first_proc.unwrap().split_terminator("\n");
-            let cpu_name_line = lines.find(|&item| item.starts_with("model name"));
+            let mut lines: Vec<_> = first_proc.unwrap().split_terminator("\n").collect();
+            let cpu_name_line = lines.iter().find(|&item| item.starts_with("model name"));
             let cpu_name = match cpu_name_line {
                 Some(val) => val
                     .split(":")
@@ -71,7 +71,7 @@ pub fn get_cpu() -> CPUInfo {
                 None => "N/A".to_string(),
             };
 
-            let core_count_line = lines.find(|&item| item.starts_with("cpu cores"));
+            let core_count_line = lines.iter().find(|&item| item.starts_with("cpu cores"));
             let core_count = match core_count_line {
                 Some(val) => val
                     .split(":")
@@ -83,7 +83,7 @@ pub fn get_cpu() -> CPUInfo {
                 None => -1,
             };
 
-            let thread_count_line = lines.find(|&item| item.starts_with("siblings"));
+            let thread_count_line = lines.iter().find(|&item| item.starts_with("siblings"));
             let thread_count = match thread_count_line {
                 Some(val) => val
                     .split(":")
@@ -95,7 +95,7 @@ pub fn get_cpu() -> CPUInfo {
                 None => -1,
             };
 
-            let vendor_line = lines.find(|&item| item.starts_with("vendor_id"));
+            let vendor_line = lines.iter().find(|&item| item.starts_with("vendor_id"));
             let vendor = match vendor_line {
                 Some(val) => CPUVendor::from_str(
                     val.split(":")
