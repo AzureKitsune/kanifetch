@@ -8,6 +8,8 @@ mod shell;
 use colors::TerminalColors;
 use hardware::get_hardware_info;
 use shell::get_shell;
+
+use crate::hardware::HardwareInfo;
 fn main() {
     let os_name = read_os_name();
     let kernel = read_kernel();
@@ -84,14 +86,7 @@ fn main() {
         Err(_) => {}
     }
 
-    colors::print_color(TerminalColors::BoldRed, "CPU: ");
-    colors::print_color(TerminalColors::White, hardware_info.cpu_name);
-
-    if hardware_info.is_cpu_smt_enabled {
-        colors::println_color(TerminalColors::BoldGreen, " [+SMT]");
-    } else {
-        colors::println_color(TerminalColors::BoldRed, " [-SMT]");
-    }
+    print_cpu_info(&hardware_info);
 
     if let Some(igpu_name) = hardware_info.integrated_gpu_name {
         colors::print_color(TerminalColors::BoldBlue, "GPU: ");
@@ -106,6 +101,25 @@ fn main() {
             colors::println_color(TerminalColors::BoldCyan, " [Discrete]");
         }
     }
+}
+
+fn print_cpu_info(hardware_info: &HardwareInfo) {
+    colors::print_color(TerminalColors::BoldRed, "CPU: ");
+    colors::print_color(TerminalColors::White, hardware_info.cpu_name.clone());
+
+    if hardware_info.is_cpu_smt_enabled {
+        colors::print_color(TerminalColors::BoldGreen, " [+SMT]");
+    } else {
+        colors::print_color(TerminalColors::BoldRed, " [-SMT]");
+    }
+
+    if hardware_info.is_turbo_boost_enabled {
+        colors::print_color(TerminalColors::BoldGreen, " [+Turbo]");
+    } else {
+        colors::print_color(TerminalColors::BoldRed, " [-Turbo]");
+    }
+
+    println!("");
 }
 
 fn make_separator(length: usize) -> String {

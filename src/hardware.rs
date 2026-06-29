@@ -23,11 +23,13 @@ pub struct CPUInfo {
     pub thread_count: i32,
     pub vendor: CPUVendor,
     pub is_smt_enabled: bool,
+    pub is_turbo_boost_enabled: bool,
 }
 
 pub struct HardwareInfo {
     pub cpu_name: String, // TODO account for multiple cpus
     pub is_cpu_smt_enabled: bool,
+    pub is_turbo_boost_enabled: bool,
     pub integrated_gpu_name: Option<String>,
     pub discrete_gpu_names: Option<Vec<String>>,
 }
@@ -101,12 +103,20 @@ pub fn get_cpu() -> CPUInfo {
         Ok(contents) => contents.trim() == "1",
     }; // this could be inferred from core_count == thread_count
 
+    // https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
+    let is_turbo_boost_enabled =
+        match std::fs::read_to_string("/sys/devices/system/cpu/cpufreq/boost") {
+            Err(_) => false, // Assume false
+            Ok(contents) => contents.trim() == "1",
+        };
+
     return CPUInfo {
         cpu_name,
         core_count,
         thread_count,
         vendor,
         is_smt_enabled,
+        is_turbo_boost_enabled,
     };
 }
 
@@ -182,6 +192,7 @@ pub fn get_hardware_info() -> HardwareInfo {
     HardwareInfo {
         cpu_name,
         is_cpu_smt_enabled: full_cpu_info.is_smt_enabled,
+        is_turbo_boost_enabled: full_cpu_info.is_turbo_boost_enabled,
         integrated_gpu_name: igpu_name,
         discrete_gpu_names: Some(discrete_gpus),
     }
