@@ -9,7 +9,7 @@ use colors::TerminalColors;
 use hardware::get_hardware_info;
 use shell::get_shell;
 
-use crate::hardware::{CPUInfo, GPUInfo, HardwareInfo, MemoryInfo};
+use crate::hardware::{CPUInfo, GPUInfo, MemoryInfo};
 fn main() {
     let os_name = read_os_name();
     let kernel = read_kernel();
@@ -51,13 +51,26 @@ fn main() {
         ),
     );
     colors::print_color(&TerminalColors::BoldCyan, "WM: ");
+    let colorized_session_type = match desktop_env.session_type.as_str() {
+        "wayland" => format!(
+            "{}[{}]{}",
+            TerminalColors::BoldBlue,
+            "wayland",
+            TerminalColors::White
+        ),
+        "x11" => format!(
+            "{}[{}]{}",
+            TerminalColors::BoldGreen,
+            "x11",
+            TerminalColors::White
+        ),
+        _ => format!("[{}]", desktop_env.session_type.as_str().to_string()),
+    };
     colors::println_color(
         &TerminalColors::White,
         format!(
-            "{} ({}) [{}]",
-            desktop_env.window_manager,
-            desktop_env.window_manager_version,
-            desktop_env.session_type.as_str()
+            "{} ({}) {}",
+            desktop_env.window_manager, desktop_env.window_manager_version, colorized_session_type
         ),
     );
 
@@ -126,11 +139,12 @@ fn print_gpu_info(gpus_info: &Option<Vec<GPUInfo>>) {
             };
 
             let colorized_gpu_name = gpu_name.replace(
-                gpu_name,
+                gpu.gpu_vendor.to_str(),
                 &format!(
-                    "{}{}",
+                    "{}{}{}",
                     &vendor_color.as_str().to_string(),
-                    gpu_name.as_str()
+                    gpu.gpu_vendor.to_str(),
+                    &TerminalColors::White
                 ),
             );
 
@@ -160,11 +174,12 @@ fn print_cpu_info(cpu_info: &CPUInfo) {
     };
 
     let colorized_cpu_name = cpu_name.replace(
-        &cpu_name,
+        &cpu_info.vendor.to_str(),
         &format!(
-            "{}{}",
+            "{}{}{}",
             &vendor_color.as_str().to_string(),
-            cpu_name.as_str()
+            cpu_info.vendor.to_str(),
+            &TerminalColors::White
         ),
     );
 

@@ -47,8 +47,15 @@ impl CPUVendor {
             _ => CPUVendor::Unknown,
         }
     }
-}
 
+    pub fn to_str(self: &CPUVendor) -> &str {
+        match self {
+            CPUVendor::AMD => "AMD",
+            CPUVendor::Intel => "Intel",
+            _ => "",
+        }
+    }
+}
 #[allow(unused)]
 #[derive(PartialEq, Eq, Debug)]
 pub struct CPUInfo {
@@ -71,6 +78,7 @@ pub struct MemoryInfo {
     pub used_swap: usize,
 }
 
+#[allow(unused)]
 pub enum GPUVendor {
     AMD,
     Intel,
@@ -79,6 +87,7 @@ pub enum GPUVendor {
     Unknown,
 }
 
+#[allow(unused)]
 impl GPUVendor {
     pub fn from_str(value: &str) -> GPUVendor {
         match value {
@@ -86,6 +95,15 @@ impl GPUVendor {
             "Intel" => GPUVendor::Intel,
             "Nvidia" => GPUVendor::Nvidia,
             _ => GPUVendor::Unknown,
+        }
+    }
+
+    pub fn to_str(self: &GPUVendor) -> &str {
+        match self {
+            GPUVendor::AMD => "AMD",
+            GPUVendor::Intel => "Intel",
+            GPUVendor::Nvidia => "Nvidia",
+            _ => "",
         }
     }
 }
@@ -229,27 +247,7 @@ pub fn get_cpu() -> CPUInfo {
 pub fn get_hardware_info() -> HardwareInfo {
     let full_cpu_info = get_cpu();
 
-    let mut all_gpus = get_gpus();
-    // if full_cpu_info.igpu_name != None {
-    //     // Removes igpu from discrete gpu list
-    //     let full_igpu_name = all_gpus
-    //         .iter()
-    //         .find(|&item| {
-    //             item.contains(
-    //                 full_cpu_info
-    //                     .igpu_name
-    //                     .clone()
-    //                     .expect("Unable to get igpu name.")
-    //                     .as_str(),
-    //             )
-    //         })
-    //         .expect("Unable to get igpu name.");
-    //     all_gpus = all_gpus
-    //         .iter()
-    //         .filter(|&item| item != full_igpu_name)
-    //         .map(|item| item.to_string())
-    //         .collect();
-    // }
+    let all_gpus = get_gpus();
 
     let mem_info = get_memory().expect("Unable to gather memory information.");
 
@@ -360,9 +358,17 @@ pub fn get_gpus() -> Vec<GPUInfo> {
                 _ => true,
             };
 
+            let vendor = if device_name.contains("AMD") || device_name.contains("ATI") {
+                GPUVendor::AMD
+            } else if device_name.contains("Intel") {
+                GPUVendor::Intel
+            } else {
+                GPUVendor::Unknown
+            };
+
             detected_gpus.push(GPUInfo {
                 gpu_name: device_name.to_string(),
-                gpu_vendor: GPUVendor::from_str(device_name.split(" ").nth(0).unwrap()),
+                gpu_vendor: vendor,
                 is_discrete: is_discrete,
             });
         }
