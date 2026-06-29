@@ -156,7 +156,7 @@ fn print_gpu_info(gpus_info: &Option<Vec<GPUInfo>>) {
 
             colors::print_color(&TerminalColors::BoldPurple, "GPU: ");
             colors::print_color(&TerminalColors::White, colorized_gpu_name);
-            colors::println_color(
+            colors::print_color(
                 &TerminalColors::BoldCyan,
                 if gpu.is_discrete {
                     " [Discrete]"
@@ -164,6 +164,12 @@ fn print_gpu_info(gpus_info: &Option<Vec<GPUInfo>>) {
                     " [Integrated]"
                 },
             );
+
+            if let Some(vram) = &gpu.vram {
+                colors::print_color(&TerminalColors::BoldCyan, format!(" [{}]", vram));
+            }
+
+            println!("");
         }
     }
 }

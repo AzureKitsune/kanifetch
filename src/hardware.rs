@@ -113,6 +113,7 @@ pub struct GPUInfo {
     pub gpu_name: String,
     pub gpu_vendor: GPUVendor,
     pub is_discrete: bool,
+    pub vram: Option<String>,
 }
 
 pub struct HardwareInfo {
@@ -282,6 +283,7 @@ pub fn get_gpus() -> Vec<GPUInfo> {
                         gpu_name: gpu_name,
                         gpu_vendor: GPUVendor::Nvidia,
                         is_discrete: false, // TODO handle future nvidia igpus
+                        vram: None,
                     });
                 }
             }
@@ -325,7 +327,7 @@ pub fn get_gpus() -> Vec<GPUInfo> {
             let video_mem_line = all_lines_iter
                 .find(|&item| item.trim().starts_with("Video memory"))
                 .expect("Unable to read video memory.");
-            let _video_mem = video_mem_line
+            let video_mem = video_mem_line
                 .trim()
                 .split(":")
                 .collect::<Vec<_>>()
@@ -370,6 +372,7 @@ pub fn get_gpus() -> Vec<GPUInfo> {
                 gpu_name: device_name.to_string(),
                 gpu_vendor: vendor,
                 is_discrete: is_discrete,
+                vram: Some(video_mem.to_string()),
             });
         }
     }
