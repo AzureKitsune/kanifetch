@@ -207,10 +207,14 @@ pub fn get_cpu() -> CPUInfo {
     // TODO handle Intel, Nvidia and other CPUs
     match vendor {
         CPUVendor::AMD => {
-            if cpu_name.contains("w/ Radeon") {
+            if cpu_name.contains("Radeon") {
                 // Handle Ryzen iGPU
 
-                let name_split = cpu_name.split("w/ Radeon").collect::<Vec<_>>(); // Strips igpu name out
+                let name_split = if cpu_name.contains("w/ Radeon") {
+                    cpu_name.split("w/ Radeon").collect::<Vec<_>>()
+                } else {
+                    cpu_name.split("with Radeon").collect::<Vec<_>>()
+                }; // Strips igpu name out
 
                 formatted_cpu_name = format!(
                     "{} ({} cores / {} threads)",
@@ -229,7 +233,9 @@ pub fn get_cpu() -> CPUInfo {
                 );
             }
         }
-        CPUVendor::Intel => {}
+        CPUVendor::Intel => {
+            formatted_cpu_name = cpu_name.replace("(R)", "").replace("(TM)", "");
+        }
         CPUVendor::Nvidia => {}
         CPUVendor::Qualcomm => {}
         _ => {}
@@ -263,27 +269,49 @@ pub fn get_gpus() -> Vec<GPUInfo> {
     let mut detected_gpus = Vec::new();
     if std::path::Path::new("/proc/driver/nvidia/gpus/*/information").exists() {
         // handle Nvidia dGPUs
+
+        let nvidia_device_re = Regex::new(r"(?mus)^Model\:.+?GPU Excluded\:.+?(Yes|No)").unwrap();
+
+        let is_nvidia_smi_installed = which("nvidia-smi").is_ok();
+
         match std::fs::read_to_string("/proc/driver/nvidia/gpus/*/information") {
             Err(_e) => {}
             Ok(contents) => {
-                let model_lines = contents
-                    .split_terminator("\n")
-                    .filter(|&item| item.starts_with("Model:"));
+                for gpu_block in nvidia_device_re.find_iter(&contents) {
+                    let mut gpu_block_lines = gpu_block.as_str().split_terminator("\n");
 
-                for line in model_lines {
-                    let gpu_name: String = line
-                        .split(":")
-                        .collect::<Vec<_>>()
-                        .get(1)
-                        .expect("Unable to fetch gpu name.")
-                        .trim()
-                        .to_string();
+                    let model = gpu_block_lines
+                        .find(|&item| item.starts_with("Model:"))
+                        .unwrap();
+
+                    let uuid = gpu_block_lines
+                        .find(|&item| item.starts_with("GPU UUID:"))
+                        .unwrap();
+
+                    let vram = if is_nvidia_smi_installed {
+                        let nvidia_smi_output = String::from_utf8(
+                            std::process::Command::new("nvidia-smi")
+                                .arg("-i")
+                                .arg(uuid)
+                                .arg("--query-gpu=memory.total")
+                                .arg("--format=csv,noheader")
+                                .output()
+                                .expect("Unable to get nvidia-smi info.")
+                                .stdout,
+                        )
+                        .expect("Unable to parse nvidia-smi info output.")
+                        .replace(" ", "");
+
+                        Some(nvidia_smi_output)
+                    } else {
+                        None
+                    };
 
                     detected_gpus.push(GPUInfo {
-                        gpu_name: gpu_name,
+                        gpu_name: model.to_string(),
                         gpu_vendor: GPUVendor::Nvidia,
-                        is_discrete: false, // TODO handle future nvidia igpus
-                        vram: None,
+                        is_discrete: true, // TODO handle future nvidia igpus
+                        vram: vram,
                     });
                 }
             }
@@ -300,6 +328,8 @@ pub fn get_gpus() -> Vec<GPUInfo> {
                 .stdout,
         )
         .expect("Unable to parse opengl info output.");
+
+        let device_name_info_re = Regex::new(r"(?mus)\(.+?\)").unwrap();
 
         let render_block_re = Regex::new(r"(?mus)^Extended renderer info.+?Memory info");
         let re_iter = render_block_re.unwrap();
@@ -368,8 +398,17 @@ pub fn get_gpus() -> Vec<GPUInfo> {
                 GPUVendor::Unknown
             };
 
+            let formatted_device_name = match vendor {
+                GPUVendor::AMD => device_name_info_re
+                    .replace_all(device_name, "")
+                    .trim()
+                    .to_string(),
+                GPUVendor::Intel => device_name.replace("(R)", ""),
+                _ => device_name.to_string(),
+            };
+
             detected_gpus.push(GPUInfo {
-                gpu_name: device_name.to_string(),
+                gpu_name: formatted_device_name.to_string(),
                 gpu_vendor: vendor,
                 is_discrete: is_discrete,
                 vram: Some(video_mem.to_string()),

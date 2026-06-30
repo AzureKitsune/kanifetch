@@ -18,6 +18,8 @@ pub fn get_ipv4_info() -> Result<NetworkInterfaceInfo, &'static str> {
     .trim()
     .to_string();
 
+    // TODO support multiple IP addresses
+
     for line in network_info.split_terminator("\n") {
         if line.contains("inet") && !line.contains("inet6") {
             let fields: Vec<&str> = line.split_whitespace().collect();

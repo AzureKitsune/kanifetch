@@ -82,11 +82,12 @@ fn main() {
 
     match net_info {
         Ok(item) => {
-            colors::print_color(
-                &TerminalColors::BoldPurple,
-                format!("NET ({}/{}): ", item.name, item.address_type),
+            colors::print_color(&TerminalColors::BoldPurple, "IP: ");
+            colors::print_color(&TerminalColors::White, item.address);
+            colors::println_color(
+                &TerminalColors::BoldGreen,
+                format!(" [{}/{}]", item.name, item.address_type),
             );
-            colors::println_color(&TerminalColors::White, item.address);
         }
         Err(_) => {}
     }
@@ -166,7 +167,7 @@ fn print_gpu_info(gpus_info: &Option<Vec<GPUInfo>>) {
             );
 
             if let Some(vram) = &gpu.vram {
-                colors::print_color(&TerminalColors::BoldCyan, format!(" [{}]", vram));
+                colors::print_color(&TerminalColors::BoldCyan, format!(" [VRAM: {}]", vram));
             }
 
             println!("");
@@ -239,20 +240,14 @@ fn print_package_info(
             print!(", ");
             colors::print_color(&TerminalColors::BoldCyan, "flatpak");
 
-            colors::print_color(
-                &TerminalColors::White,
-                format!(" ({} flatpaks)", flatpak_pkg_count),
-            );
+            colors::print_color(&TerminalColors::White, format!(" ({})", flatpak_pkg_count));
         }
 
         if snap_pkg_count > &0 {
             print!(", ");
             colors::print_color(&TerminalColors::BoldCyan, "snap");
 
-            colors::print_color(
-                &TerminalColors::White,
-                format!(" ({} snaps)", snap_pkg_count),
-            );
+            colors::print_color(&TerminalColors::White, format!(" ({})", snap_pkg_count));
         }
 
         println!("");
