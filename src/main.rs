@@ -231,10 +231,7 @@ fn print_package_info(
 
         colors::print_color(&TerminalColors::BoldBlue, "Packages: ");
         colors::print_color(&TerminalColors::BoldPurple, pkg_info.pkg_mgr_name.clone());
-        colors::print_color(
-            &TerminalColors::White,
-            format!(" ({} packages)", pkg_info.pkg_count),
-        );
+        colors::print_color(&TerminalColors::White, format!(" ({})", pkg_info.pkg_count));
 
         if flatpak_pkg_count > &0 {
             print!(", ");
