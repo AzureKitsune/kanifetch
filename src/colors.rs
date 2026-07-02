@@ -63,3 +63,20 @@ pub fn print_color<T: std::fmt::Display>(color: &TerminalColors, msg: T) {
 pub fn println_color<T: std::fmt::Display>(color: &TerminalColors, msg: T) {
     print_color(color, format!("{}\n", msg));
 }
+
+pub fn wrap_color<T: std::fmt::Display>(color: &TerminalColors, msg: T) -> String {
+    wrap_color_with_end(color, msg, &TerminalColors::White)
+}
+
+pub fn wrap_color_with_end<T: std::fmt::Display>(
+    color: &TerminalColors,
+    msg: T,
+    end_color: &TerminalColors,
+) -> String {
+    format!(
+        "{}{}{}",
+        &color.as_str().to_string(),
+        msg,
+        &end_color.as_str().to_string()
+    )
+}

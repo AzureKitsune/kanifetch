@@ -81,13 +81,24 @@ fn main() {
     );
 
     match net_info {
-        Ok(item) => {
+        Ok(items) => {
             colors::print_color(&TerminalColors::BoldPurple, "IP: ");
-            colors::print_color(&TerminalColors::White, item.address);
-            colors::println_color(
-                &TerminalColors::BoldGreen,
-                format!(" [{}/{}]", item.name, item.address_type),
-            );
+
+            let colorized_ips: Vec<String> = items
+                .iter()
+                .map(|item| {
+                    format!(
+                        "{} {}",
+                        colors::wrap_color(&TerminalColors::White, &item.address),
+                        colors::wrap_color(
+                            &TerminalColors::BoldGreen,
+                            format!("[{}/{}]", item.name, item.address_type)
+                        )
+                    )
+                })
+                .collect();
+
+            println!("{}", colorized_ips.join(", "));
         }
         Err(_) => {}
     }
@@ -147,11 +158,10 @@ fn print_gpu_info(gpus_info: &Option<Vec<GPUInfo>>) {
 
             let colorized_gpu_name = gpu_name.replace(
                 gpu.gpu_vendor.to_str(),
-                &format!(
-                    "{}{}{}",
-                    &vendor_color.as_str().to_string(),
-                    gpu.gpu_vendor.to_str(),
-                    &TerminalColors::White
+                &colors::wrap_color_with_end(
+                    &vendor_color,
+                    &gpu.gpu_vendor.to_str(),
+                    &TerminalColors::White,
                 ),
             );
 
@@ -188,11 +198,10 @@ fn print_cpu_info(cpu_info: &CPUInfo) {
 
     let colorized_cpu_name = cpu_name.replace(
         &cpu_info.vendor.to_str(),
-        &format!(
-            "{}{}{}",
-            &vendor_color.as_str().to_string(),
+        &colors::wrap_color_with_end(
+            &vendor_color,
             cpu_info.vendor.to_str(),
-            &TerminalColors::White
+            &TerminalColors::White,
         ),
     );
 
