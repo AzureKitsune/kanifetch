@@ -52,24 +52,9 @@ fn main() {
     );
     colors::print_color(&TerminalColors::BoldCyan, "WM: ");
     let colorized_session_type = match desktop_env.session_type.as_str() {
-        "wayland" => format!(
-            "{}[{}]{}",
-            TerminalColors::BoldBlue,
-            "Wayland",
-            TerminalColors::White
-        ),
-        "x11" => format!(
-            "{}[{}]{}",
-            TerminalColors::BoldGreen,
-            "X11",
-            TerminalColors::White
-        ),
-        "tty" => format!(
-            "{}[{}]{}",
-            TerminalColors::BoldPurple,
-            "X11",
-            TerminalColors::White
-        ),
+        "wayland" => colors::wrap_color(&TerminalColors::BoldBlue, format!("[{}]", "Wayland")),
+        "x11" => colors::wrap_color(&TerminalColors::BoldGreen, format!("[{}]", "X11")),
+        "tty" => colors::wrap_color(&TerminalColors::BoldPurple, format!("[{}]", "TTY")),
         _ => format!("[{}]", desktop_env.session_type.as_str().to_string()),
     };
     colors::println_color(
