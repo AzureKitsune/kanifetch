@@ -1,6 +1,10 @@
-# Kanifetch [_kani_ is _crab_ in Japanese]
+# Kanifetch
 
-A simple fetch tool like `neofetch` and `fastfetch`.
+🦀 A simple fetch tool like `neofetch` and `fastfetch`. 🦀
 
 > [!IMPORTANT]
-> I am a beginner at Rust, so expect inefficiencies and ugly code as I am writing this as a way to learn.
+> This is my first Rust project and I'm using it to learn Rust programming. Expect ugly code along the way.
+
+
+> [!IMPORTANT]
+> Translator's Note: _kani_ is _crab_ in Japanese.
