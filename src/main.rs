@@ -9,9 +9,10 @@ use colors::TerminalColors;
 use shell::get_shell;
 
 use crate::{
-    hardware::{CPUInfo, GPUInfo, MemoryInfo, get_hardware_info},
+    hardware::{CPUInfo, GPUInfo, MemoryInfo, NPUInfo, get_hardware_info},
     network::NetworkInterfaceInfo,
 };
+
 fn main() {
     let os_name = read_os_name();
     let kernel = read_kernel();
@@ -74,6 +75,10 @@ fn main() {
     print_cpu_info(&hardware_info.cpu_info);
 
     print_gpu_info(&hardware_info.gpus_info);
+
+    if let Some(npu_info) = &hardware_info.npu_info {
+        print_npu_info(&npu_info);
+    }
 
     print_memory_info(hardware_info.memory_info);
 
@@ -210,6 +215,15 @@ fn print_cpu_info(cpu_info: &CPUInfo) {
     } else {
         colors::print_color(&TerminalColors::BoldRed, " [-Turbo]");
     }
+
+    println!("");
+}
+
+fn print_npu_info(npu_info: &NPUInfo) {
+    let npu_name = npu_info.npu_name.clone();
+    colors::print_color(&TerminalColors::BoldGreen, "NPU: ");
+
+    colors::print_color(&TerminalColors::White, npu_name);
 
     println!("");
 }

@@ -1,3 +1,10 @@
+use std::fmt::Debug;
+use std::fs;
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::os::fd::AsRawFd;
+
 use regex::Regex;
 use which::which;
 
@@ -117,6 +124,11 @@ pub struct GPUInfo {
 }
 
 #[allow(unused)]
+pub struct NPUInfo {
+    pub npu_name: String,
+}
+
+#[allow(unused)]
 pub struct MountInfo {
     pub mount_point: String,
     pub source: String,
@@ -128,6 +140,7 @@ pub struct HardwareInfo {
     pub gpus_info: Option<Vec<GPUInfo>>,
     pub memory_info: MemoryInfo,
     pub mount_info: Option<Vec<MountInfo>>,
+    pub npu_info: Option<NPUInfo>,
 }
 
 pub fn get_cpu() -> CPUInfo {
@@ -267,11 +280,14 @@ pub fn get_hardware_info() -> HardwareInfo {
     let mem_info = get_memory().expect("Unable to gather memory information.");
     let mount_info = get_mounts();
 
+    let npu_info = get_npu();
+
     HardwareInfo {
         cpu_info: full_cpu_info,
         gpus_info: Some(all_gpus),
         memory_info: mem_info,
         mount_info,
+        npu_info,
     }
 }
 
@@ -417,6 +433,8 @@ pub fn get_gpus() -> Vec<GPUInfo> {
                 _ => device_name.to_string(),
             };
 
+            // TODO maybe grab fdinfo from "/dev/dri/card1", etc
+
             detected_gpus.push(GPUInfo {
                 gpu_name: formatted_device_name.to_string(),
                 gpu_vendor: vendor,
@@ -537,6 +555,54 @@ pub fn get_mounts() -> Option<Vec<MountInfo>> {
             }
 
             Some(detected_mounts)
+        }
+    }
+}
+
+pub fn get_npu() -> Option<NPUInfo> {
+    if !fs::exists("/dev/accel/accel0").is_ok() {
+        return None;
+    }
+
+    let npu_data = get_fdinfo("/dev/accel/accel0");
+
+    if npu_data.is_none() {
+        return None;
+    }
+
+    let npu_data_lines = npu_data.unwrap();
+    if npu_data_lines
+        .iter()
+        .find(|&line| line.starts_with("drm"))
+        .is_none()
+    {
+        return None;
+    }
+
+    //TODO implement
+    Some(NPUInfo {
+        npu_name: "".to_string(),
+    })
+}
+
+fn get_fdinfo(device_path: &str) -> Option<Vec<String>> {
+    match File::open(device_path) {
+        Err(_) => None,
+        Ok(device_file) => {
+            let device_file_fd = device_file.as_raw_fd();
+
+            let fdinfo_file_path = format!("/proc/self/fdinfo/{:?}", device_file_fd);
+            let fdinfo_file =
+                File::open(fdinfo_file_path).expect("Unable to read fdinfo for device");
+
+            let buf = BufReader::new(fdinfo_file);
+
+            let lines = buf.lines().flatten().collect::<Vec<String>>();
+            for line in &lines {
+                println!("{line}");
+            }
+
+            return Some(lines);
         }
     }
 }
