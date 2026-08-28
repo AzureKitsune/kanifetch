@@ -116,10 +116,18 @@ pub struct GPUInfo {
     pub vram: Option<String>,
 }
 
+#[allow(unused)]
+pub struct MountInfo {
+    pub mount_point: String,
+    pub source: String,
+    pub filesystem: String,
+}
+
 pub struct HardwareInfo {
     pub cpu_info: CPUInfo, // TODO account for multiple cpus
     pub gpus_info: Option<Vec<GPUInfo>>,
     pub memory_info: MemoryInfo,
+    pub mount_info: Option<Vec<MountInfo>>,
 }
 
 pub fn get_cpu() -> CPUInfo {
@@ -257,11 +265,13 @@ pub fn get_hardware_info() -> HardwareInfo {
     let all_gpus = get_gpus();
 
     let mem_info = get_memory().expect("Unable to gather memory information.");
+    let mount_info = get_mounts();
 
     HardwareInfo {
         cpu_info: full_cpu_info,
         gpus_info: Some(all_gpus),
         memory_info: mem_info,
+        mount_info,
     }
 }
 
@@ -499,6 +509,34 @@ pub fn get_memory() -> Result<MemoryInfo, &'static str> {
                 total_swap: total_swap as usize,
                 used_swap: (total_swap - swap_free) as usize,
             })
+        }
+    }
+}
+
+pub fn get_mounts() -> Option<Vec<MountInfo>> {
+    let wrapped_mounts = std::fs::read_to_string("/proc/mounts");
+    match wrapped_mounts {
+        Err(_) => None,
+        Ok(contents) => {
+            let mut detected_mounts: Vec<_> = Vec::new();
+            let mut added_sources: Vec<String> = Vec::new();
+            let all_mounts: Vec<_> = contents.split_terminator("\n").collect();
+            for mount in all_mounts {
+                let mount_parts = mount.split(' ').collect::<Vec<&str>>();
+                let source = mount_parts.get(0).unwrap();
+                let mount_point = mount_parts.get(1).unwrap();
+                let filesystem = mount_parts.get(2).unwrap();
+                if source.starts_with("/dev") && !added_sources.contains(&source.to_string()) {
+                    detected_mounts.push(MountInfo {
+                        mount_point: mount_point.to_string(),
+                        source: source.to_string(),
+                        filesystem: filesystem.to_string(),
+                    });
+                    added_sources.push(source.to_string());
+                }
+            }
+
+            Some(detected_mounts)
         }
     }
 }

@@ -93,6 +93,13 @@ fn main() {
     print_gpu_info(&hardware_info.gpus_info);
 
     print_memory_info(hardware_info.memory_info);
+
+    if let Some(mount_info) = &hardware_info.mount_info {
+        for mount in mount_info {
+            colors::print_color(&TerminalColors::BoldRed, "Disk: ");
+            colors::println_color(&TerminalColors::White, mount.mount_point.clone());
+        }
+    }
 }
 
 fn format_memory_amount(memory: usize) -> String {
