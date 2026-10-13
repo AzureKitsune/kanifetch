@@ -9,7 +9,10 @@ use colors::TerminalColors;
 use hardware::get_hardware_info;
 use shell::get_shell;
 
-use crate::hardware::{CPUInfo, GPUInfo, MemoryInfo};
+use crate::{
+    hardware::{CPUInfo, GPUInfo, MemoryInfo},
+    network::NetworkInterfaceInfo,
+};
 fn main() {
     let os_name = read_os_name();
     let kernel = read_kernel();
@@ -65,27 +68,8 @@ fn main() {
         ),
     );
 
-    match net_info {
-        Ok(items) => {
-            colors::print_color(&TerminalColors::BoldPurple, "IP: ");
-
-            let colorized_ips: Vec<String> = items
-                .iter()
-                .map(|item| {
-                    format!(
-                        "{} {}",
-                        colors::wrap_color(&TerminalColors::White, &item.address),
-                        colors::wrap_color(
-                            &TerminalColors::BoldGreen,
-                            format!("[{}/{}]", item.name, item.address_type)
-                        )
-                    )
-                })
-                .collect();
-
-            println!("{}", colorized_ips.join(", "));
-        }
-        Err(_) => {}
+    if let Ok(unwrapped_net_info) = net_info {
+        print_network_info(unwrapped_net_info);
     }
 
     print_cpu_info(&hardware_info.cpu_info);
@@ -112,6 +96,23 @@ fn format_memory_amount(memory: usize) -> String {
     } else {
         // Kibibytes
         return format!("{} KiB", memory);
+    }
+}
+
+fn print_network_info(net_info_list: Vec<NetworkInterfaceInfo>) {
+    for nic in net_info_list {
+        colors::print_color(&TerminalColors::BoldPurple, "IP: ");
+        colors::println_color(
+            &TerminalColors::White,
+            format!(
+                "{} {}",
+                colors::wrap_color(&TerminalColors::White, &nic.address),
+                colors::wrap_color(
+                    &TerminalColors::BoldGreen,
+                    format!("[{}/{}]", nic.name, nic.address_type)
+                )
+            ),
+        );
     }
 }
 
