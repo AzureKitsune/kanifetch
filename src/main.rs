@@ -6,11 +6,10 @@ mod pkg;
 mod shell;
 
 use colors::TerminalColors;
-use hardware::get_hardware_info;
 use shell::get_shell;
 
 use crate::{
-    hardware::{CPUInfo, GPUInfo, MemoryInfo},
+    hardware::{CPUInfo, GPUInfo, MemoryInfo, get_hardware_info},
     network::NetworkInterfaceInfo,
 };
 fn main() {
