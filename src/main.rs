@@ -253,12 +253,11 @@ fn print_package_info(
 }
 
 fn make_separator(length: usize) -> String {
-    //TODO figure out a better way to do this
-    let mut header_sep: Vec<&str> = Vec::new();
-    for _ in 0..length {
-        header_sep.push("-");
+    let mut str: String = String::with_capacity(length);
+    for i in 0..length {
+        str.insert(i, '-');
     }
-    header_sep.join("")
+    return str;
 }
 
 fn print_header() {
